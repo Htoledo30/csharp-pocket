@@ -1,0 +1,19 @@
+/* Passo a passo: painel embaixo do código. */
+.stepper { flex: none; max-height: 52%; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-top: 1px solid var(--line); background: var(--sunken); overflow: hidden; }
+.step-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.step-head span { flex: 1 1 140px; min-width: 0; font-size: 13px; color: var(--muted); }
+.step-head button:disabled { opacity: 0.45; cursor: default; }
+.stepper input[type="range"] { width: 100%; margin: 0; accent-color: var(--accent); }
+.step-msg { margin: 0; font-size: 13px; line-height: 1.4; color: var(--fg); }
+.step-msg:empty { display: none; }
+.step-msg.bad { color: var(--err); }
+.step-vars { min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 2px; font: 400 13px/1.45 var(--mono); }
+.step-vars p { margin: 0; color: var(--muted); font: 400 13px/1.4 var(--ui); }
+.var { display: flex; flex-wrap: wrap; gap: 2px 10px; padding: 3px 6px; border-radius: 5px; }
+.var b { flex: none; font-weight: 700; color: var(--tok-type); }
+.var span { flex: 1 1 60%; min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.var i { flex: none; font-style: normal; color: var(--muted); font-size: 12px; }
+.var.changed { background: var(--accent-soft); }
+.step-out { display: flex; align-items: flex-end; gap: 8px; }
+.step-out pre { flex: 1 1 0; min-width: 0; margin: 0; padding: 6px 8px; border-radius: 6px; background: var(--term-bg); color: var(--term-fg); font: 400 12px/1.45 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 4.6em; overflow: hidden; }
+@media (min-width: 700px) { .step-out { display: none; } }

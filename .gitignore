@@ -1,0 +1,10 @@
+node_modules/
+dist/
+engine/bin/
+engine/obj/
+# gerado pelo build a partir de engine/ (tools/build.mjs engine)
+src/framework/Pocket.dll
+tests/shots/
+# seus programas nunca vão para o repositório
+_meus-programas/
+*.log

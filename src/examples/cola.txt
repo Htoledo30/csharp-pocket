@@ -1,0 +1,170 @@
+=== Guardar valores
+--- Variáveis | Tipo, nome e valor.
+int vida = 20;
+double nota = 7.5;
+string nome = "Ana";
+bool vivo = true;
+char letra = 'A';
+--- Mudar o valor
+vida = vida - 5;
+vida -= 5;       // mesma coisa
+vida++;          // soma 1
+=== Tela e teclado
+--- Escrever na tela
+Console.WriteLine("Olá!");
+Console.WriteLine($"Vida: {vida}");
+Console.Write("Sem pular linha");
+--- Ler um texto
+Console.Write("Seu nome: ");
+string nome = Console.ReadLine();
+--- Ler um número
+Console.Write("Sua idade: ");
+int idade = int.Parse(Console.ReadLine());
+--- Ler um número sem dar erro
+Console.Write("Digite um número: ");
+if (int.TryParse(Console.ReadLine(), out int numero))
+{
+    Console.WriteLine($"Você digitou {numero}");
+}
+else
+{
+    Console.WriteLine("Isso não é um número.");
+}
+--- Esperar uma tecla
+ConsoleKey tecla = Console.ReadKey(true).Key;
+if (tecla == ConsoleKey.UpArrow)
+{
+    Console.WriteLine("Cima");
+}
+--- Cores e limpar a tela
+Console.Clear();
+Console.ForegroundColor = ConsoleColor.Yellow;
+Console.WriteLine("Texto amarelo");
+Console.ResetColor();
+=== Decidir
+--- if, else if, else
+if (vida <= 0)
+{
+    Console.WriteLine("Morreu");
+}
+else if (vida < 10)
+{
+    Console.WriteLine("Ferido");
+}
+else
+{
+    Console.WriteLine("Bem");
+}
+--- Duas condições
+if (vida > 0 && temChave)        // E: as duas
+{
+}
+if (opcao == 1 || opcao == 2)    // OU: pelo menos uma
+{
+}
+--- switch
+switch (opcao)
+{
+    case 1:
+        Console.WriteLine("Atacar");
+        break;
+    case 2:
+        Console.WriteLine("Fugir");
+        break;
+    default:
+        Console.WriteLine("Opção inválida");
+        break;
+}
+=== Repetir
+--- while | Enquanto a condição for verdadeira.
+while (vida > 0)
+{
+    vida -= 5;
+}
+--- for | Um número certo de vezes.
+for (int i = 1; i <= 10; i++)
+{
+    Console.WriteLine(i);
+}
+--- foreach | Cada item de uma lista.
+foreach (string item in itens)
+{
+    Console.WriteLine(item);
+}
+--- Menu que repete até sair
+bool rodando = true;
+while (rodando)
+{
+    Console.WriteLine("[1] Jogar  [2] Sair");
+    string opcao = Console.ReadLine();
+    if (opcao == "1")
+    {
+        Console.WriteLine("Jogando...");
+    }
+    else if (opcao == "2")
+    {
+        rodando = false;
+    }
+}
+=== Sorteio e contas
+--- Dado
+Random dado = new Random();
+int d6 = dado.Next(1, 7);   // de 1 a 6
+--- Limitar um valor
+vida = Math.Clamp(vida, 0, 20);   // entre 0 e 20
+--- Divisão com casas decimais
+double media = soma / 2.0;   // com 2 (inteiro) cortaria as casas
+=== Listas
+--- Array | Tamanho fixo.
+int[] notas = { 7, 8, 10 };
+Console.WriteLine(notas[0]);        // primeira posição
+Console.WriteLine(notas.Length);    // quantos itens
+--- Lista | Cresce e diminui.
+List<string> itens = new List<string>();
+itens.Add("espada");
+itens.Remove("espada");
+Console.WriteLine(itens.Count);
+--- Percorrer com a posição
+for (int i = 0; i < itens.Count; i++)
+{
+    Console.WriteLine($"{i}: {itens[i]}");
+}
+=== Texto
+--- Operações com texto
+string heroi = "  Teseu  ".Trim();
+Console.WriteLine(heroi.Length);
+Console.WriteLine(heroi.ToUpper());
+if (heroi.Contains("Tes"))
+{
+}
+--- Comparar sem ligar para maiúsculas
+if (resposta.ToLower() == "sim")
+{
+}
+=== Organizar o código
+--- Método que devolve um valor
+int Dobro(int n)
+{
+    return n * 2;
+}
+--- Método que só faz algo
+void Saudar(string nome)
+{
+    Console.WriteLine($"Olá, {nome}!");
+}
+--- Classe @fim | É colocada no fim do arquivo, depois dos comandos.
+class Jogador
+{
+    public string Nome;
+    public int Vida = 20;
+
+    public void Ferir(int dano)
+    {
+        Vida = Math.Clamp(Vida - dano, 0, 20);
+    }
+}
+--- Usar a classe
+Jogador heroi = new Jogador();
+heroi.Nome = "Teseu";
+heroi.Ferir(5);
+Console.WriteLine(heroi.Vida);

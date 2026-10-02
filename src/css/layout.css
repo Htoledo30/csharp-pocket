@@ -1,0 +1,92 @@
+/* A tela: cabeçalho, barra de ações, abas (celular) e os dois painéis (código e terminal). */
+.app {
+  height: var(--app-h, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: max(10px, var(--safe-t));
+  padding-right: max(16px, var(--safe-r));
+  padding-bottom: max(12px, var(--safe-b));
+  padding-left: max(16px, var(--safe-l));
+  max-width: 1500px;
+  margin-inline: auto;
+}
+.head { display: flex; flex-direction: column; gap: 10px; }
+
+/* Linha de cima */
+.top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 6px; font: 700 17px/1 var(--mono); letter-spacing: -0.02em; }
+.brand .mark { background: var(--accent); color: var(--on-accent); padding: 4px 6px 3px; border-radius: 5px; }
+.status {
+  margin-left: auto; display: flex; align-items: center; gap: 7px; min-width: 0;
+  font: 500 12px/1 var(--mono); color: var(--muted);
+}
+.status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
+.status[data-state="ready"] .dot { background: var(--ok); }
+.status[data-state="busy"] .dot { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
+.status[data-state="failed"] .dot { background: var(--err); }
+.status[data-state="loading"] .dot { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .status .dot { animation: none !important; } }
+.status-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Linha de ações */
+.bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 36px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--panel); font-weight: 500; white-space: nowrap;
+}
+.btn:hover { border-color: var(--muted); }
+.btn svg { width: 12px; height: 12px; flex: none; fill: currentColor; }
+.btn.icon { padding: 0; width: 36px; }
+.btn.icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.btn.run { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; padding: 0 16px; min-width: 116px; }
+.btn.run[data-mode="stop"] { background: transparent; color: var(--stop); border-color: var(--stop); }
+.btn.pick { flex: 0 1 auto; min-width: 0; padding: 0 12px; }
+.btn.pick span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.btn.new { align-self: flex-start; background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.bar .spacer { flex: 1 1 0; }
+
+/* Abas (celular) */
+.tabs { display: none; gap: 4px; padding: 3px; background: var(--sunken); border-radius: 10px; }
+.tabs button {
+  flex: 1; height: 32px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+}
+.tabs button[aria-selected="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 1px 2px rgb(20 10 60 / 0.12); }
+.tabs .pip { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+/* Painéis */
+.panes { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; }
+.pane { min-width: 0; min-height: 0; display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.pane.code { background: var(--panel); }
+.pane.term { background: var(--term-bg); border-color: var(--term-line); color: var(--term-fg); }
+
+@media (min-width: 700px) and (max-width: 859px) and (orientation: portrait) {
+  /* tablet em pé: código em cima, terminal embaixo, os dois sempre à vista */
+  .panes { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr); }
+}
+@media (max-width: 699px) {
+  .app { gap: 8px; padding-top: max(8px, var(--safe-t)); padding-bottom: max(8px, var(--safe-b)); }
+  .app.typing .head, .app.typing .tabs { display: none; }
+  .bar { flex-wrap: nowrap; gap: 6px; }
+  .bar .spacer { display: none; }
+  .bar .btn { padding: 0 10px; }
+  .bar .btn.icon { padding: 0; }
+  .bar .btn.run { min-width: 0; padding: 0 12px; }
+  .bar .btn.pick { flex: 1 1 0; justify-content: flex-start; }
+  #steps svg { display: none; }
+  .tabs { display: flex; }
+  .panes { grid-template-columns: minmax(0, 1fr); }
+  .pane.off { display: none; }
+}
+/* Celular deitado: cabeçalho e ações na mesma linha para sobrar altura para o código. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .app { gap: 6px; padding-top: max(6px, var(--safe-t)); padding-bottom: max(6px, var(--safe-b)); }
+  .head { flex-direction: row; align-items: center; gap: 10px; }
+  .head .top { flex: none; }
+  .head .status { display: none; }
+  .head .bar { flex: 1 1 0; min-width: 0; }
+  .app.typing .head { display: flex; }
+}

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C# Pocket</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Editor e terminal de C# que roda inteiro no navegador, sem servidor e sem internet.">
+
+<!-- Aplicativo instalável: abre em tela cheia, sem a barra do navegador -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f1f0f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#100e17" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="C# Pocket">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+<style>html{background:#100e17}@media (prefers-color-scheme:light){html{background:#f1f0f6}}</style>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/editor.css">
+<link rel="stylesheet" href="css/terminal.css">
+<link rel="stylesheet" href="css/stepper.css">
+<link rel="stylesheet" href="css/modals.css">
+
+<script>
+// O service worker guarda o app no aparelho (funciona sem internet). Em localhost ele fica desligado, para desenvolver.
+window.__pocketSw = (function () {
+  var dev = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && !/[?&]sw\b/.test(location.search);
+  if (dev || !('serviceWorker' in navigator)) return 'off';
+  return navigator.serviceWorker.controller ? 'on' : 'installing';
+})();
+</script>
+</head>
+<body>
+<noscript>O C# Pocket precisa de JavaScript para funcionar.</noscript>
+
+<div class="app" id="app">
+  <div class="head">
+    <header class="top">
+      <div class="brand"><span class="mark">C#</span><span>Pocket</span></div>
+      <div class="status" id="status" data-state="loading" role="status"><span class="dot"></span><span class="status-text" id="statusText">Carregando o .NET…</span></div>
+    </header>
+
+    <div class="bar">
+      <button class="btn run" id="run" data-mode="run" title="Ctrl + Enter">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path id="runIcon" d="M2 1l9 5-9 5z"/></svg><span id="runLabel">Executar</span>
+      </button>
+      <button class="btn" id="steps" title="Executar uma linha por vez, vendo as variáveis">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 1l6 5-6 5zM9 1h2v10H9z"/></svg><span>Passo a passo</span>
+      </button>
+      <button class="btn pick" id="files" aria-haspopup="dialog" title="Meus programas">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 2.5h4l1 1.5h5v6H1z"/></svg><span id="fileName">Programas</span>
+      </button>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Painéis">
+    <button role="tab" id="tabCode" aria-selected="true" aria-controls="paneCode">Código</button>
+    <button role="tab" id="tabTerm" aria-selected="false" aria-controls="paneTerm">Terminal<span class="pip" id="pip" hidden></span></button>
+  </nav>
+
+  <main class="panes">
+    <section class="pane code" id="paneCode" aria-label="Código">
+      <div class="scroller" id="scroller">
+        <div class="gutter" id="gutter" aria-hidden="true"></div>
+        <div class="sheet">
+          <div class="marks" id="marks"></div>
+          <pre id="hl" aria-hidden="true"></pre>
+          <textarea id="code" aria-label="Program.cs" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off"></textarea>
+          <div class="ac" id="ac" role="listbox" aria-label="Sugestões" hidden></div>
+        </div>
+      </div>
+      <div class="wordhint" id="hint" hidden>
+        <button id="hintBtn" aria-expanded="false" aria-controls="hintCard"><b id="hintWord"></b><span id="hintText"></span><i>exemplo</i></button>
+        <div class="hint-card" id="hintCard" hidden><p id="hintFull"></p><pre id="hintCode"></pre></div>
+      </div>
+      <div class="stepper" id="stepper" hidden>
+        <div class="step-head">
+          <button class="mini" id="stepBack">Voltar</button>
+          <button class="mini strong" id="stepNext">Próximo</button>
+          <span id="stepInfo" role="status"></span>
+          <button class="mini" id="stepExit">Sair</button>
+        </div>
+        <input type="range" id="stepRange" min="0" max="0" value="0" aria-label="Ir para um passo">
+        <p class="step-msg" id="stepMsg"></p>
+        <div class="step-vars" id="stepVars" aria-label="Variáveis"></div>
+        <div class="step-out" id="stepOut" hidden><pre id="stepOutText"></pre><button class="mini" id="stepOutGo">Ver terminal</button></div>
+      </div>
+      <div class="keys" id="keys" aria-label="Atalhos de digitação">
+        <button class="act" id="cola" title="Modelos prontos de código">Cola</button>
+        <button class="act" id="format">Formatar</button>
+        <button class="act" id="copy">Copiar</button>
+        <button class="act" id="fontDown" aria-label="Diminuir a letra do código">A−</button>
+        <button class="act" id="fontUp" aria-label="Aumentar a letra do código">A+</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button data-act="tab" title="Indentar">Tab</button>
+        <button data-pair="{}">{ }</button>
+        <button data-pair="()">( )</button>
+        <button data-pair="[]">[ ]</button>
+        <button data-pair='""'>" "</button>
+        <button data-ins=";">;</button>
+        <button data-ins="=">=</button>
+        <button data-ins="<">&lt;</button>
+        <button data-ins=">">&gt;</button>
+        <button data-ins="!">!</button>
+        <button data-ins="$">$</button>
+        <button data-ins="+">+</button>
+        <button data-ins="-">-</button>
+        <button data-ins="*">*</button>
+        <button data-ins="/">/</button>
+        <button data-ins="&&">&amp;&amp;</button>
+        <button data-ins="||">||</button>
+        <button data-snip="Console.WriteLine(|);">WriteLine</button>
+        <button data-snip="Console.ReadLine()|">ReadLine</button>
+        <button data-act="left" aria-label="Cursor para a esquerda">←</button>
+        <button data-act="right" aria-label="Cursor para a direita">→</button>
+        <button data-act="undo">Desfazer</button>
+      </div>
+    </section>
+
+    <section class="pane term off" id="paneTerm" aria-label="Terminal">
+      <div class="term-head">
+        <span class="title" id="termTitle">Terminal</span>
+        <span class="state" id="termState"></span>
+        <button id="clear">Limpar</button>
+      </div>
+      <div class="term-scroll" id="termScroll">
+        <div class="screen" id="screen" aria-live="off"></div>
+        <div class="notes" id="notes"></div>
+      </div>
+      <div class="ask" id="ask" hidden>
+        <form id="lineForm" hidden>
+          <span class="prompt">›</span>
+          <input id="lineInput" aria-label="Entrada do programa" enterkeyhint="send" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="digite e envie">
+          <button class="send" type="submit">Enviar</button>
+        </form>
+        <div id="keyForm" hidden>
+          <div class="pad">
+            <button data-key="ArrowLeft" aria-label="Seta para a esquerda">←</button>
+            <button data-key="ArrowUp" aria-label="Seta para cima">↑</button>
+            <button data-key="ArrowDown" aria-label="Seta para baixo">↓</button>
+            <button data-key="ArrowRight" aria-label="Seta para a direita">→</button>
+            <button data-key="Enter">Enter</button>
+            <button data-key=" ">Espaço</button>
+            <button data-key="Escape">Esc</button>
+            <input id="keyInput" aria-label="Tecla" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="ou digite a tecla">
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-back" id="filesBack" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="filesTitle">
+    <div class="modal-head">
+      <h2 id="filesTitle">Meus programas</h2>
+      <button class="mini" id="filesClose">Fechar</button>
+    </div>
+    <div class="modal-body">
+      <button class="btn new" id="fileNew">Novo programa</button>
+      <div class="file-list" id="fileList"></div>
+      <h3>Exemplos</h3>
+      <div class="ex-list" id="exList"></div>
+      <p class="sync" id="syncNote"></p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="colaBack" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="colaTitle">
+    <div class="modal-head">
+      <h2 id="colaTitle">Cola de C#</h2>
+      <button class="mini" id="colaClose">Fechar</button>
+    </div>
+    <div class="modal-body" id="colaBody"></div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "csharp-pocket",
+  "version": "1.0.0",
+  "description": "Editor e terminal de C# que roda inteiro no navegador (Roslyn + .NET em WebAssembly).",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "engine": "node tools/build.mjs engine",
+    "dev": "node tools/serve.mjs",
+    "build": "node tools/build.mjs dist",
+    "test": "node tests/run.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.55.0"
+  }
+}
