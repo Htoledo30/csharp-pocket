@@ -1,5 +1,5 @@
 // Erros do compilador e da execução explicados em português, avisos e dicas.
-import { startServer, startBrowser, open, ready, runCode, check, DESKTOP } from './lib.mjs';
+import { startServer, startBrowser, open, ready, idle, runCode, check, DESKTOP } from './lib.mjs';
 
 const server = await startServer();
 const browser = await startBrowser();
@@ -31,8 +31,8 @@ try {
 
   r = await runCode(page, 'int x = 3;\nwhile (x > 0)\n{\n    Console.WriteLine(x);\n}\n');
   check('dica do while que nunca termina', /pode nunca terminar/.test(r.notes), r.notes);
-  await page.click('#run');   // se ainda estiver rodando, para
-  await page.waitForTimeout(300);
+  if ((await page.getAttribute('#run', 'data-mode')) === 'stop') await page.click('#run');   // se ainda estiver rodando, para
+  await idle(page);
 
   r = await runCode(page, 'var a = new A();\nConsole.WriteLine(a.V);\nint x = 5;\nclass A { public int V; }\n');
   check('aviso de variável não usada', /nunca é usada|aviso/.test(r.notes) || r.screen.includes('0'), r.notes);

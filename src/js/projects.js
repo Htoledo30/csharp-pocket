@@ -45,7 +45,7 @@ export function load() {
   return false;
 }
 
-function normalize(p) {
+export function normalize(p) {
   const files = Array.isArray(p.files) && p.files.length ? p.files.map((f) => ({ name: String(f.name || MAIN_FILE), code: String(f.code || '') })) : [{ name: MAIN_FILE, code: String(p.code || '') }];
   const out = { id: String(p.id || newId()), name: String(p.name || 'Programa'), files, active: Number(p.active) || 0, updated: Number(p.updated) || 0 };
   if (p.deleted) out.deleted = true;
@@ -171,3 +171,56 @@ export function initProjectsPersistence() {
   window.addEventListener('pagehide', flush);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
 }
+
+// ---------------------------------------------------------------- trocar programas com outros lugares
+// Usado ao importar um backup e ao sincronizar: o que foi mexido por último vence, programa por programa.
+// Devolve { added, replaced, ids } (ids = programas que mudaram aqui) e { newer } = ids que aqui estão mais novos.
+export function mergeProjects(remote) {
+  const result = { added: 0, replaced: 0, ids: [], newer: [] };
+  const seen = new Set();
+  for (const raw of remote) {
+    if (!raw || !raw.id) continue;
+    const incoming = normalize(raw);
+    seen.add(incoming.id);
+    const mine = projectById(incoming.id);
+    if (!mine) {
+      state.projects.push(incoming);
+      if (!incoming.deleted) result.added++;
+      result.ids.push(incoming.id);
+    } else if (incoming.updated > mine.updated) {
+      Object.assign(mine, incoming);
+      if (!mine.deleted) result.replaced++;
+      result.ids.push(mine.id);
+    } else if (incoming.updated < mine.updated) result.newer.push(mine.id);
+  }
+  for (const p of state.projects) if (!seen.has(p.id)) result.newer.push(p.id);
+  persist();
+  if (result.ids.length) bus.emit('projects:merged', result.ids);
+  return result;
+}
+
+// Um programa novo, vindo de fora (importar): sempre com id novo, sem apagar nada do que existe.
+export function addImported(name, files) {
+  const clean = files.filter((f) => f && typeof f.code === 'string').map((f) => ({ name: f.name || MAIN_FILE, code: f.code }));
+  if (!clean.length) return null;
+  const p = { id: newId(), name: uniqueName(name || 'Importado'), files: clean, active: 0, updated: Date.now() };
+  state.projects.push(p);
+  persist();
+  bus.emit('projects:changed', p.id);
+  return p;
+}
+
+// Troca os arquivos do programa por outros (restaurar uma versão).
+export function replaceFiles(id, files, active = 0) {
+  const p = projectById(id);
+  if (!p || !files.length) return false;
+  p.files = files.map((f) => ({ name: f.name, code: f.code }));
+  p.active = Math.min(active, p.files.length - 1);
+  p.updated = Date.now();
+  delete p.seed;
+  persist();
+  bus.emit('projects:changed', p.id);
+  return true;
+}
+
+export const allProjects = () => state.projects;

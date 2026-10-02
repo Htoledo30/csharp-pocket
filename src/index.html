@@ -44,6 +44,7 @@ window.__pocketSw = (function () {
     <header class="top">
       <div class="brand"><span class="mark">C#</span><span>Pocket</span></div>
       <div class="status" id="status" data-state="loading" role="status"><span class="dot"></span><span class="status-text" id="statusText">Carregando o .NET…</span></div>
+      <button class="btn icon" id="settingsBtn" aria-label="Ajustes" title="Ajustes"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </header>
 
     <div class="bar">
@@ -67,6 +68,22 @@ window.__pocketSw = (function () {
   <main class="panes">
     <section class="pane code" id="paneCode" aria-label="Código">
       <div class="ftabs" id="ftabs" role="tablist" aria-label="Arquivos do programa"></div>
+      <div class="findbar" id="findbar" hidden>
+        <div class="find-row">
+          <input id="findInput" aria-label="Buscar" placeholder="Buscar" enterkeyhint="search" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off">
+          <span class="find-count" id="findCount" aria-live="polite"></span>
+          <button class="mini" id="findPrev" aria-label="Achado anterior">↑</button>
+          <button class="mini" id="findNext" aria-label="Próximo achado">↓</button>
+          <button class="mini" id="findCase" aria-pressed="false" title="Diferenciar maiúsculas e minúsculas">Aa</button>
+          <button class="mini" id="findReplaceToggle" title="Trocar">⇄</button>
+          <button class="mini" id="findClose" aria-label="Fechar a busca">✕</button>
+        </div>
+        <div class="find-row" id="replaceRow" hidden>
+          <input id="replaceInput" aria-label="Trocar por" placeholder="Trocar por" enterkeyhint="done" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off">
+          <button class="mini" id="replaceOne">Trocar</button>
+          <button class="mini strong" id="replaceAll">Todos</button>
+        </div>
+      </div>
       <div class="scroller" id="scroller">
         <div class="gutter" id="gutter" aria-hidden="true"></div>
         <div class="sheet">
@@ -98,11 +115,8 @@ window.__pocketSw = (function () {
         <div class="step-out" id="stepOut" hidden><pre id="stepOutText"></pre><button class="mini" id="stepOutGo">Ver terminal</button></div>
       </div>
       <div class="keys" id="keys" aria-label="Atalhos de digitação">
-        <button class="act" id="cola" title="Modelos prontos de código">Cola</button>
-        <button class="act" id="format">Formatar</button>
-        <button class="act" id="copy">Copiar</button>
-        <button class="act" id="fontDown" aria-label="Diminuir a letra do código">A−</button>
-        <button class="act" id="fontUp" aria-label="Aumentar a letra do código">A+</button>
+        <button class="act run" id="keyRun" aria-label="Executar o programa" title="Executar">▶</button>
+        <button class="act" id="more" aria-label="Mais ações" aria-haspopup="dialog">Mais</button>
         <span class="sep" aria-hidden="true"></span>
         <button data-act="tab" title="Indentar">Tab</button>
         <button data-pair="{}">{ }</button>
@@ -110,7 +124,13 @@ window.__pocketSw = (function () {
         <button data-pair="[]">[ ]</button>
         <button data-pair='""'>" "</button>
         <button data-ins=";">;</button>
+        <button data-ins=".">.</button>
+        <button data-ins=",">,</button>
         <button data-ins="=">=</button>
+        <button data-act="left" aria-label="Cursor para a esquerda">←</button>
+        <button data-act="right" aria-label="Cursor para a direita">→</button>
+        <button data-act="up" aria-label="Cursor para cima">↑</button>
+        <button data-act="down" aria-label="Cursor para baixo">↓</button>
         <button data-ins="<">&lt;</button>
         <button data-ins=">">&gt;</button>
         <button data-ins="!">!</button>
@@ -119,13 +139,26 @@ window.__pocketSw = (function () {
         <button data-ins="-">-</button>
         <button data-ins="*">*</button>
         <button data-ins="/">/</button>
+        <button data-ins="%">%</button>
         <button data-ins="&&">&amp;&amp;</button>
         <button data-ins="||">||</button>
+        <button data-ins="?">?</button>
+        <button data-ins=":">:</button>
+        <button data-ins="'">'</button>
+        <button data-ins="_">_</button>
         <button data-snip="Console.WriteLine(|);">WriteLine</button>
         <button data-snip="Console.ReadLine()|">ReadLine</button>
-        <button data-act="left" aria-label="Cursor para a esquerda">←</button>
-        <button data-act="right" aria-label="Cursor para a direita">→</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button data-act="home" aria-label="Começo da linha">Início</button>
+        <button data-act="end" aria-label="Fim da linha">Fim</button>
         <button data-act="undo">Desfazer</button>
+        <button data-act="redo">Refazer</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="act" id="cola" title="Modelos prontos de código">Cola</button>
+        <button class="act" id="format">Formatar</button>
+        <button class="act" id="copy">Copiar</button>
+        <button class="act" id="fontDown" aria-label="Diminuir a letra do código">A−</button>
+        <button class="act" id="fontUp" aria-label="Aumentar a letra do código">A+</button>
       </div>
     </section>
 
@@ -185,6 +218,16 @@ window.__pocketSw = (function () {
       <button class="mini" id="colaClose">Fechar</button>
     </div>
     <div class="modal-body" id="colaBody"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="settingsBack" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-head">
+      <h2 id="settingsTitle">Ajustes</h2>
+      <button class="mini" id="settingsClose">Fechar</button>
+    </div>
+    <div class="modal-body" id="settingsBody"></div>
   </div>
 </div>
 

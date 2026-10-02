@@ -3,6 +3,7 @@ import { $, bus, toast } from './util.js';
 import { code, insert, setCode, lineStartOf } from './editor.js';
 import { showTab } from './tabs.js';
 import { formatSource } from './format.js';
+import { indentLines } from './commands.js';
 
 export function outdent() {
   const v = code.value, a = code.selectionStart;
@@ -33,7 +34,7 @@ export async function copyCode() {
 }
 
 export function initEditing() {
-  bus.on('editor:tab', (shift) => { if (shift) outdent(); else insert('    '); });
+  bus.on('editor:tab', (shift) => indentLines(shift));
   bus.on('format', formatCode);
   $('format').addEventListener('click', formatCode);
   $('copy').addEventListener('click', copyCode);

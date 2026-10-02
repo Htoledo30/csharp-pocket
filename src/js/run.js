@@ -205,6 +205,7 @@ export async function start() {
   $('run').dataset.mode = 'stop';
   $('runLabel').textContent = 'Parar';
   $('runIcon').setAttribute('d', 'M2 2h8v8H2z');
+  bus.emit('run:state', true);
   $('termState').textContent = engineState.ready ? 'executando' : 'aguardando o .NET';
   setStatus('busy', engineState.ready ? 'Executando…' : 'Carregando o .NET…');
   if (narrow()) showTab('term');
@@ -226,6 +227,7 @@ export function finish() {
   $('run').dataset.mode = 'run';
   $('runLabel').textContent = 'Executar';
   $('runIcon').setAttribute('d', 'M2 1l9 5-9 5z');
+  bus.emit('run:state', false);
   $('termState').textContent = '';
   $('ask').hidden = true;
   idleStatus();

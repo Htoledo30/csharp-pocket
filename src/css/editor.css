@@ -105,3 +105,16 @@
 .problem-fixes { display: flex; flex-wrap: wrap; gap: 6px; }
 .problem-fixes:empty { display: none; }
 .problem:not([hidden]) ~ .wordhint { display: none; }
+
+/* Buscar e trocar */
+.findbar { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 6px 8px; background: var(--sunken); border-bottom: 1px solid var(--line); }
+.find-row { display: flex; align-items: center; gap: 5px; }
+.find-row input { flex: 1 1 0; min-width: 0; height: 34px; padding: 0 9px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel); font-size: max(14px, var(--code-size)); }
+.find-row input:focus { border-color: var(--accent); outline: none; }
+.find-count { flex: none; min-width: 3.4em; text-align: center; font: 500 12px/1 var(--mono); color: var(--muted); }
+.find-count.none { color: var(--err); }
+.findbar .mini { min-width: 34px; height: 34px; padding: 0 8px; }
+.findbar .mini[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.marks i.br { right: auto; background: color-mix(in srgb, var(--accent) 22%, transparent); outline: 1px solid color-mix(in srgb, var(--accent) 60%, transparent); border-radius: 2px; }
+.keys .run { min-width: 40px; background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-size: 15px; }
+.keys .run.stop { background: transparent; color: var(--stop); border-color: var(--stop); }

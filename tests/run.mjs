@@ -6,9 +6,10 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const skip = new Set(['lib.mjs', 'run.mjs', 'shots.mjs']);
+const skip = new Set(['lib.mjs', 'run.mjs']);
+const isHelper = (f) => f.startsWith('_') || f.startsWith('shots');
 const wanted = process.argv.slice(2);
-const files = fs.readdirSync(dir).filter((f) => f.endsWith('.mjs') && !skip.has(f) && (!wanted.length || wanted.some((w) => f.startsWith(w)))).sort();
+const files = fs.readdirSync(dir).filter((f) => f.endsWith('.mjs') && !skip.has(f) && !isHelper(f) && (!wanted.length || wanted.some((w) => f.startsWith(w)))).sort();
 
 let failed = 0;
 for (const file of files) {

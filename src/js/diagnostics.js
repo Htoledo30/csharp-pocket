@@ -59,3 +59,8 @@ export function apply() {
   setLineMarks(marks);
   setSquiggles(squiggles);
 }
+
+// Ao editar, o que se sabia do arquivo aberto deixa de valer até a próxima análise.
+export function initDiagnostics() {
+  bus.on('edit', () => dropFile(active));
+}

@@ -122,7 +122,8 @@ export function refreshSuggest() {
     if (!res) return fallback();
     let items = res.items.map((it) => ({ l: it.l, i: it.i, d: it.d, k: it.k }));
     if (!dotted) items = withExtras(items, prefix);
-    items = items.filter((it) => it.l !== prefix || it.k === 'sn');
+    // O que já está digitado por inteiro só interessa se aceitar acrescenta algo (os parênteses de um método, por exemplo).
+    items = items.filter((it) => it.l !== prefix || it.k === 'sn' || it.i.replace('|', '') !== it.l);
     if (!items.length) return hideSuggest();
     showSuggest(items.slice(0, 40), res.start, !!dotted);
   });

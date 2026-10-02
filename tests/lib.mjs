@@ -26,7 +26,7 @@ export async function open(browser, url, contextOptions = DESKTOP) {
   const context = await browser.newContext(contextOptions);
   const page = await context.newPage();
   page.errors = [];
-  page.on('pageerror', (e) => page.errors.push('pageerror: ' + e.message));
+  page.on('pageerror', (e) => page.errors.push('pageerror: ' + e.message + (e.stack ? ' @ ' + e.stack.split('\n').slice(0, 5).join(' | ') : '')));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) page.errors.push('console: ' + m.text().slice(0, 200)); });
   await page.goto(url);
   return { context, page };

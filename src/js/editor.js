@@ -9,7 +9,7 @@ export const gutter = $('gutter'), scroller = $('scroller');
 const hl = $('hl'), marks = $('marks');
 
 // O que está marcado por cima do código: linhas com erro, o passo atual, sublinhados e buscas.
-const decor = { lines: new Map(), step: 0, squiggles: [], finds: [], findCurrent: -1 };
+const decor = { lines: new Map(), step: 0, squiggles: [], finds: [], findCurrent: -1, brackets: [] };
 let lastGutter = '', lastMarks = '';
 
 // ---------------------------------------------------------------- medidas
@@ -55,6 +55,9 @@ export function paint() {
   decor.finds.forEach((f, idx) => {
     mk += '<i class="find' + (idx === decor.findCurrent ? ' now' : '') + '" style="top:' + (f.line - 1) * lh + 'px;left:calc(10px + ' + (f.col - 1) + 'ch);width:' + Math.max(1, f.len) + 'ch"></i>';
   });
+  for (const q of decor.brackets) {
+    mk += '<i class="br" style="top:' + (q.line - 1) * lh + 'px;left:calc(10px + ' + (q.col - 1) + 'ch);width:1ch"></i>';
+  }
   if (g !== lastGutter) { gutter.innerHTML = g; lastGutter = g; }
   if (mk !== lastMarks) { marks.innerHTML = mk; lastMarks = mk; }
 }
@@ -63,6 +66,12 @@ export function setLineMarks(map) { decor.lines = map || new Map(); paint(); }
 export function setStepLine(line) { decor.step = line || 0; paint(); }
 export function setSquiggles(list) { decor.squiggles = list || []; paint(); }
 export function setFinds(list, current = -1) { decor.finds = list || []; decor.findCurrent = current; paint(); }
+export function setBrackets(list) {
+  const same = list.length === decor.brackets.length && list.every((q, i) => q.line === decor.brackets[i].line && q.col === decor.brackets[i].col);
+  if (same) return;
+  decor.brackets = list;
+  paint();
+}
 export function hasLineMarks() { return decor.lines.size > 0; }
 
 // ---------------------------------------------------------------- posições
@@ -87,9 +96,9 @@ export const lineStartOf = (pos, src = code.value) => src.lastIndexOf('\n', pos 
 export function lineEndOf(pos, src = code.value) { const nl = src.indexOf('\n', pos); return nl < 0 ? src.length : nl; }
 
 // O textarea nunca rola sozinho: o cursor é mantido à vista aqui.
-export function reveal() {
-  if (code.selectionStart !== code.selectionEnd) return;
-  const { line, col } = posToLineCol(code.selectionStart);
+export function reveal(force = false) {
+  if (!force && code.selectionStart !== code.selectionEnd) return;
+  const { line, col } = posToLineCol(code.selectionEnd);
   const lh = lineHeight(), cw = charWidth(), gw = gutter.offsetWidth;
   const top = 10 + (line - 1) * lh, left = 10 + (col - 1) * cw;
   if (top < scroller.scrollTop + 4) scroller.scrollTop = top - 4;
@@ -105,12 +114,15 @@ export function scrollToLine(line, center = false) {
 }
 
 // ---------------------------------------------------------------- edição
+let inserting = false;
 // Insere no cursor passando pelo navegador, para o "desfazer" funcionar.
 export function insert(text, selStart, selEnd) {
   code.focus({ preventScroll: true });
   const start = code.selectionStart;
   let done = false;
+  inserting = true;      // o que o navegador avisa sobre esta inserção não deve ser tratado de novo (o WebKit avisa)
   try { done = document.execCommand('insertText', false, text); } catch (e) { done = false; }
+  inserting = false;
   if (!done) {
     code.setRangeText(text, start, code.selectionEnd, 'end');
     code.dispatchEvent(new Event('input'));
@@ -179,6 +191,7 @@ export const addEditHook = (fn) => editHooks.push(fn);
 const CLOSERS = { '{': '}', '(': ')', '[': ']', '"': '"' };
 
 function onBeforeInput(e) {
+  if (inserting) return;
   for (const hook of inputHooks) if (hook(e)) return;
   const v = code.value, a = code.selectionStart, b = code.selectionEnd;
   if (e.inputType === 'insertLineBreak' || (e.inputType === 'insertText' && e.data === '\n')) {
