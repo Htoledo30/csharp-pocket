@@ -15,6 +15,8 @@ import { currentProject, projectFiles } from './projects.js';
 import { setDiagnostics, clearDiagnostics } from './diagnostics.js';
 import { switchFile } from './filetabs.js';
 import { loadFs, saveFs, fsBytes } from './fsstore.js';
+import { settings } from './settings.js';
+import { formatCode } from './editing.js';
 
 export const FILE_STRIDE = 1000000;
 // O motor numera as linhas como arquivo * 1.000.000 + linha.
@@ -196,6 +198,7 @@ function postRun(s) {
 }
 
 export async function start() {
+  if (settings.formatOnRun) formatCode({ quiet: true });      // opção dos Ajustes: organizar o código antes de rodar
   bus.emit('run:starting');
   term.reset();
   notes.textContent = '';

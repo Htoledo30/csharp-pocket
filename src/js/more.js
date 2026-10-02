@@ -9,6 +9,7 @@ import { openSettings } from './settings-ui.js';
 import { openFiles } from './projects-ui.js';
 import { openHistory, saveNamedVersion } from './history-ui.js';
 import { exportCurrent, pickFilesToImport } from './backup.js';
+import { changeFont } from './keybar.js';
 
 async function paste() {
   try {
@@ -33,6 +34,7 @@ const GROUPS = [
     ['Descer linha', () => moveLines(1)],
     ['Comentar / tirar //', toggleComment],
     ['Selecionar linha', selectLine],
+    ['Selecionar tudo', () => { code.focus({ preventScroll: true }); code.select(); }],
     ['Avançar (recuo)', () => indentLines(false)],
     ['Voltar (recuo)', () => indentLines(true)],
   ]],
@@ -41,9 +43,12 @@ const GROUPS = [
     ['Copiar tudo', copyCode],
     ['Colar', paste],
     ['Cola de C#', openCola],
+    ['Letra maior', () => changeFont(1)],
+    ['Letra menor', () => changeFont(-1)],
   ]],
   ['Programa', [
     ['Meus programas', openFiles],
+    ['Novo arquivo (classe)', () => { const b = document.getElementById('fileAdd'); if (b) b.click(); }],
     ['Histórico de versões', openHistory],
     ['Guardar uma versão', saveNamedVersion],
     ['Exportar este programa', exportCurrent],
@@ -85,5 +90,5 @@ export function openMore() {
 }
 
 export function initMore() {
-  $('more').addEventListener('click', openMore);
+  // O botão "Mais" vive na barra de ações (actionbar.js), que chama openMore.
 }

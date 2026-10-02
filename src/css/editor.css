@@ -116,5 +116,47 @@
 .findbar .mini { min-width: 34px; height: 34px; padding: 0 8px; }
 .findbar .mini[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .marks i.br { right: auto; background: color-mix(in srgb, var(--accent) 22%, transparent); outline: 1px solid color-mix(in srgb, var(--accent) 60%, transparent); border-radius: 2px; }
-.keys .run { min-width: 40px; background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-size: 15px; }
-.keys .run.stop { background: transparent; color: var(--stop); border-color: var(--stop); }
+
+/* Barra de ações: os botões importantes, sempre à vista, grandes, com ícone e nome */
+.actions {
+  flex: none; display: flex; gap: 4px; padding: 5px 6px; overflow-x: auto; scrollbar-width: none;
+  border-top: 1px solid var(--line); background: var(--panel);
+}
+.actions::-webkit-scrollbar { display: none; }
+.act-btn {
+  flex: 1 0 54px; min-width: 54px; height: 50px; padding: 0 4px; border: 1px solid transparent; border-radius: 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  background: transparent; color: var(--fg); font: 600 10.5px/1 var(--ui); white-space: nowrap;
+}
+.act-btn svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.act-btn:active { background: var(--accent-soft); }
+.act-btn.strong { color: var(--accent); background: var(--accent-soft); }
+.act-btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.act-btn.primary.stop { background: transparent; color: var(--stop); border-color: var(--stop); }
+/* Painel de código largo (iPad, computador): ícone e nome lado a lado. Painel estreito: nome embaixo do ícone. */
+.pane.code { container: codepane / inline-size; }
+@container codepane (min-width: 620px) {
+  .act-btn { flex: 0 0 auto; flex-direction: row; gap: 8px; height: 42px; padding: 0 14px; font-size: 13px; }
+  .act-btn svg { width: 18px; height: 18px; }
+  .actions { gap: 6px; padding: 6px 8px; }
+}
+
+/* Erro da linha: compacto (duas linhas; toque para ler tudo) */
+.problem { gap: 5px; padding: 6px 10px 7px; }
+.problem-text { cursor: pointer; }
+.problem-text span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.problem.open .problem-text span { -webkit-line-clamp: unset; }
+.problem-fixes { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.problem-fixes::-webkit-scrollbar { display: none; }
+.problem-fixes .mini { flex: none; }
+
+/* Com o teclado aberto no celular, a faixa de arquivos some se só há um */
+.app.typing .ftabs.single { display: none; }
+
+/* Telas de toque: alvos maiores */
+@media (pointer: coarse) {
+  .keys button { height: 42px; min-width: 42px; }
+  .keys { padding: 6px 8px 7px; }
+  .ftab { height: 32px; }
+  .mini { height: 36px; }
+}

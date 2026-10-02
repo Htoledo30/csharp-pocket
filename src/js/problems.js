@@ -27,6 +27,7 @@ export function refreshProblem() {
   }
   const d = pick();
   if (!d) { shown = null; box.hidden = true; return; }
+  if (shown !== d) box.classList.remove('open');
   shown = d;
   const plain = explain(d) || d.message;
   $('problemWhere').textContent = (d.severity === 'warning' ? 'Aviso · ' : '') + 'Linha ' + d.line;
@@ -48,8 +49,9 @@ export function refreshProblem() {
 }
 
 export function initProblems() {
+  $('problemMsg').parentElement.addEventListener('click', () => box.classList.toggle('open'));
   // Tocar num botão da faixa não pode tirar o foco do editor (o teclado do celular fecharia).
-  box.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) e.preventDefault(); });
+  box.addEventListener('pointerdown', (e) => e.preventDefault());
   bus.on('diagnostics:changed', refreshProblem);
   bus.on('caret', refreshProblem);
   bus.on('edit', () => { shown = null; box.hidden = true; });

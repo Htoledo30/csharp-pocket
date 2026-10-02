@@ -46,3 +46,17 @@ e roda o que for escrito.
 - `node tests/run.mjs` roda todos os testes (Chrome); `BROWSER=webkit node tests/run.mjs` roda no motor do Safari.
 - Cada teste mostra `ok` ou `FALHA`. Os testes cobrem o app instalável, o console ao vivo, as sugestões, os arquivos,
   a sincronização (com um GitHub de mentira), a atualização e os exemplos.
+
+## Rodada de interface (celular e iPad) ✅
+
+Pergunta que guiou: "o que uma pessoa com um iPhone ou iPad precisa ter sempre na cara?"
+
+- [x] Barra de ações fixa, sempre à vista acima das teclas de símbolos: **Executar, Formatar, Desfazer, Refazer, Esconder teclado, Mais**
+      (botões grandes, com ícone e nome; ícone ao lado do nome quando o painel é largo)
+- [x] Os botões da barra são escolhidos nos Ajustes (Buscar, Cola, Copiar, Duplicar linha, Comentar, Ir para a linha...)
+- [x] Barra de símbolos só com símbolos e setas; as setas repetem enquanto o dedo está em cima
+- [x] Formatar mantém o cursor no lugar e não abre o teclado; opção "Formatar sozinho ao executar"
+- [x] Cabeçalho do celular em uma linha só (mais tela para o código)
+- [x] Botões maiores em tela de toque; faixa de erro compacta (toque para ler tudo); sem a faixa de arquivos quando há um só
+- [x] Pinça com dois dedos no código muda o tamanho da letra
+- [x] Tocar na bolinha de estado mostra o texto do estado

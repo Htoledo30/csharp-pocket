@@ -31,6 +31,7 @@ export async function startSteps() {
   hideSuggest();
   clearHint();
   $('keys').hidden = true;
+  $('actions').hidden = true;
   $('stepper').hidden = false;
   $('stepInfo').textContent = engineState.ready ? 'Preparando o passo a passo…' : 'Carregando o .NET…';
   $('stepMsg').textContent = '';
@@ -59,6 +60,7 @@ export function endSteps() {
   code.readOnly = false;
   $('stepper').hidden = true;
   $('keys').hidden = false;
+  $('actions').hidden = false;
   $('ask').hidden = true;
   $('termState').textContent = '';
   setStepLine(0);

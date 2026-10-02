@@ -1,5 +1,5 @@
 // C# Pocket: aqui tudo é ligado e o app começa.
-import { $ } from './util.js';
+import { $, toast } from './util.js';
 import { initTabs } from './tabs.js';
 import { initEditor } from './editor.js';
 import { initShortcuts } from './shortcuts.js';
@@ -20,6 +20,8 @@ import { initSettingsUi } from './settings-ui.js';
 import { initBrackets } from './brackets.js';
 import { initHistory } from './history.js';
 import { initPad } from './pad.js';
+import { initActionBar } from './actionbar.js';
+import { initPinch } from './pinch.js';
 import { initDataUi } from './data-ui.js';
 import { applySettings } from './settings.js';
 import { spawn } from './engine.js';
@@ -54,8 +56,11 @@ async function main() {
   initSuggest();
   initHints();
   initKeybar();
+  initActionBar();
+  initPinch();
   initEditing();
   initPad();
+  $('status').addEventListener('click', () => toast($('statusText').textContent));
   initRun();
   initSteps();
   initCola();

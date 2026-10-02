@@ -10,6 +10,7 @@ export function renderTabs() {
   bar.textContent = '';
   const p = currentProject();
   if (!p) return;
+  bar.classList.toggle('single', p.files.length === 1);
   p.files.forEach((f, i) => {
     const b = document.createElement('button');
     b.className = 'ftab';

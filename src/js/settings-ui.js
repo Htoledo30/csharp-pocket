@@ -77,6 +77,34 @@ export async function openSettings() {
   size.append(minus, value, plus);
   body.append(row('Tamanho da letra', size));
 
+  // Botões importantes sempre à vista (a barra logo acima das teclas de símbolos).
+  const bar = await import('./actionbar.js');
+  body.append(heading('Barra de ações'));
+  body.append(note('Os botões que ficam sempre à vista acima do teclado. Escolha os que você mais usa (Executar e Mais sempre aparecem).'));
+  const barWrap = document.createElement('div');
+  barWrap.className = 'ex-list';
+  const chosen = new Set(bar.chosenActions());
+  for (const id of bar.ACTION_IDS) {
+    const b = document.createElement('button');
+    b.className = 'mini';
+    b.textContent = bar.actionLabel(id);
+    b.setAttribute('aria-pressed', String(chosen.has(id)));
+    b.addEventListener('click', () => {
+      const now = b.getAttribute('aria-pressed') !== 'true';
+      b.setAttribute('aria-pressed', String(now));
+      bar.setChosenActions(bar.ACTION_IDS.filter((x) => (x === id ? now : barWrap.querySelector('[data-id="' + x + '"]').getAttribute('aria-pressed') === 'true')));
+    });
+    b.dataset.id = id;
+    barWrap.append(b);
+  }
+  body.append(barWrap);
+  const auto = document.createElement('button');
+  auto.className = 'mini';
+  auto.setAttribute('aria-pressed', String(!!settings.formatOnRun));
+  auto.textContent = 'Formatar sozinho ao executar';
+  auto.addEventListener('click', () => { settings.formatOnRun = !settings.formatOnRun; auto.setAttribute('aria-pressed', String(settings.formatOnRun)); saveSettings(); });
+  body.append(auto);
+
   body.append(heading('Teclas do jogo'));
   body.append(note('Quais teclas aparecem na tela quando o programa espera uma tecla (ReadKey). O toque em "Tela cheia" no terminal esconde o resto para jogar.'));
   const padWrap = document.createElement('div');

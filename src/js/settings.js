@@ -4,7 +4,7 @@ import { setFontSize } from './editor.js';
 
 const KEY = 'pocket.settings';
 
-export const settings = Object.assign({ font: 0, theme: 'auto' }, local.getJson(KEY, {}));
+export const settings = Object.assign({ font: 0, theme: 'auto', formatOnRun: false }, local.getJson(KEY, {}));
 
 export function saveSettings() { local.setJson(KEY, settings); }
 

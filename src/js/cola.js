@@ -79,7 +79,6 @@ export async function openCola() {
 }
 
 export function initCola() {
-  $('cola').addEventListener('click', openCola);
   $('colaClose').addEventListener('click', () => { $('colaBack').hidden = true; });
   $('colaBack').addEventListener('click', (e) => { if (e.target === $('colaBack')) $('colaBack').hidden = true; });
 }
