@@ -5,7 +5,8 @@
 //  - reexecutar: a cada entrada o programa roda de novo desde o começo, repetindo as respostas já dadas.
 import { $, esc, bus, narrow, toast } from './util.js';
 import { code, jumpTo } from './editor.js';
-import { term, notes, note, termSize, scrollEnd } from './terminal.js';
+import { term, notes, note, termSize, scrollEnd, screen } from './terminal.js';
+const screenText = () => screen.innerText;
 import { showTab, termVisible } from './tabs.js';
 import { engineState, setStatus, idleStatus, setBusyProbe } from './status.js';
 import { nextRun, post, restartWorker, hasWorker, spawn, liveSupported, createChannel, setEngineBusy, whenReady } from './engine.js';
@@ -257,7 +258,8 @@ export function toggleRun() { if (isRunning()) stop(); else start(); }
 // Teclado de verdade (computador, iPad com teclado): vale como as teclas do terminal enquanto o programa espera uma tecla.
 function physicalKey(e) {
   const s = session;
-  if (!s || !s.active || !s.live || !s.keyMode || s.stopping) return;
+  if (!s || !s.active || s.stopping) return;
+  if (s.live ? !s.keyMode : s.waiting !== 'key') return;
   const t = e.target;
   if (t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.id !== 'keyInput'))) return;
   if (e.ctrlKey || e.metaKey || e.altKey || ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)) return;
@@ -290,4 +292,8 @@ export function initRun() {
   });
   document.addEventListener('keydown', physicalKey);
   $('clear').addEventListener('click', () => { term.reset(); notes.textContent = ''; });
+  $('copyTerm').addEventListener('click', async () => {
+    const text = (screenText() + '\n' + notes.innerText).trim();
+    try { await navigator.clipboard.writeText(text); toast('Terminal copiado'); } catch (e) { toast('Não consegui copiar: segure o dedo no texto do terminal'); }
+  });
 }

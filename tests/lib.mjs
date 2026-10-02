@@ -11,7 +11,7 @@ export async function startServer({ folder = 'src', isolated = false } = {}) {
   // POCKET_URL=https://... testa o site publicado em vez de uma cópia local.
   if (process.env.POCKET_URL) return { url: process.env.POCKET_URL, close: async () => {} };
   const port = nextPort++;
-  const server = await serve({ root: path.join(root, folder), port, isolated, quiet: true });
+  const server = await serve({ root: path.isAbsolute(folder) ? folder : path.join(root, folder), port, isolated, quiet: true });
   return { url: `http://localhost:${port}/`, close: () => new Promise((r) => { server.closeAllConnections(); server.close(r); }) };
 }
 

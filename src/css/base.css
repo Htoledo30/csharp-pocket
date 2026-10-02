@@ -85,8 +85,9 @@ body {
   font: 400 14px/1.4 var(--ui);
   overflow: hidden; overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
 }
+html { touch-action: manipulation; }
+a, img { -webkit-touch-callout: none; }
 [hidden] { display: none !important; }
 button, select, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; touch-action: manipulation; }

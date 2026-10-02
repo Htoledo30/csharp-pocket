@@ -10,6 +10,7 @@
   padding-left: max(16px, var(--safe-l));
   max-width: 1500px;
   margin-inline: auto;
+  transform: translate3d(0, var(--app-y, 0px), 0);
 }
 .head { display: flex; flex-direction: column; gap: 10px; }
 

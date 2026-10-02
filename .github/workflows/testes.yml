@@ -1,0 +1,27 @@
+name: Testes
+
+# Roda os testes num navegador de verdade (Chrome). Não bloqueia a publicação: serve para avisar se algo quebrou.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Montar o site
+        run: node tools/build.mjs dist
+      - name: Testes
+        run: node tests/run.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome

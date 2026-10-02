@@ -4,10 +4,11 @@ import { setFontSize, fontSize } from './editor.js';
 import { settings, saveSettings, applyTheme } from './settings.js';
 import { engineState } from './status.js';
 import { liveSupported } from './engine.js';
-import { isStandalone, installHint, offlineSupported } from './pwa.js';
+import { isStandalone, installHint, offlineSupported, canPromptInstall, promptInstall } from './pwa.js';
 import { state as projectState, liveProjects } from './projects.js';
 import { listFs } from './fsstore.js';
 import { confirmDialog } from './dialog.js';
+import { PAD_GROUPS, activeGroups, setPadGroup } from './pad.js';
 
 const sections = [];       // outros módulos (exportar, sincronizar) acrescentam as suas: (body) => void
 export const addSettingsSection = (fn) => sections.push(fn);
@@ -76,6 +77,21 @@ export async function openSettings() {
   size.append(minus, value, plus);
   body.append(row('Tamanho da letra', size));
 
+  body.append(heading('Teclas do jogo'));
+  body.append(note('Quais teclas aparecem na tela quando o programa espera uma tecla (ReadKey). O toque em "Tela cheia" no terminal esconde o resto para jogar.'));
+  const padWrap = document.createElement('div');
+  padWrap.className = 'ex-list';
+  const on = new Set(activeGroups());
+  for (const [id, label] of PAD_GROUPS) {
+    const b = document.createElement('button');
+    b.className = 'mini';
+    b.textContent = label;
+    b.setAttribute('aria-pressed', String(on.has(id)));
+    b.addEventListener('click', () => { const now = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(now)); setPadGroup(id, now); });
+    padWrap.append(b);
+  }
+  body.append(padWrap);
+
   body.append(heading('Este aparelho'));
   const live = liveSupported();
   body.append(row('Console ao vivo', Object.assign(document.createElement('b'), { textContent: live ? 'ligado' : 'desligado' })));
@@ -86,6 +102,13 @@ export async function openSettings() {
   body.append(row('Tela cheia', Object.assign(document.createElement('b'), { textContent: isStandalone() ? 'sim, aberto como app' : 'não, aberto no navegador' })));
   const hint = installHint();
   if (hint) body.append(note(hint));
+  if (canPromptInstall()) {
+    const install = document.createElement('button');
+    install.className = 'mini strong';
+    install.textContent = 'Instalar o app';
+    install.addEventListener('click', async () => { await promptInstall(); install.remove(); });
+    body.append(install);
+  }
   const v = await loadVersion();
   body.append(row('Versão', Object.assign(document.createElement('b'), { textContent: (v.version ? v.version.slice(0, 7) : 'local') + (engineState.version ? ' · ' + engineState.version : '') })));
   const update = document.createElement('button');

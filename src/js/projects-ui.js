@@ -5,9 +5,9 @@ import { hideSuggest } from './suggest.js';
 import { showTab } from './tabs.js';
 import { renderTabs, initFileTabs } from './filetabs.js';
 import { clearDiagnostics, setActiveFileIndex } from './diagnostics.js';
-import { EXAMPLES, exampleCode } from './examples.js';
+import { EXAMPLES, exampleCode, exampleFiles } from './examples.js';
 import {
-  state, liveProjects, projectById, currentProject, activeFile, addProject, renameProject, deleteProject,
+  state, liveProjects, projectById, currentProject, activeFile, addProject, addImported, renameProject, deleteProject,
   setCurrent, saveCode, load, persist, initProjectsPersistence, STARTER,
 } from './projects.js';
 
@@ -125,9 +125,9 @@ export function closeFiles() { $('filesBack').hidden = true; }
 export const refreshFiles = () => { if (!$('filesBack').hidden) renderFiles(); };
 
 export async function startFromExample(id, title) {
-  let text;
-  try { text = await exampleCode(id); } catch (e) { toast('Não foi possível abrir o exemplo'); return; }
-  const p = addProject(title, text);
+  let files;
+  try { files = await exampleFiles(id); } catch (e) { toast('Não foi possível abrir o exemplo'); return; }
+  const p = files.length === 1 ? addProject(title, files[0].code) : addImported(title, files);
   openProject(p.id);
   toast('Exemplo aberto como um programa novo');
 }

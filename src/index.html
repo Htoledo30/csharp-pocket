@@ -166,6 +166,9 @@ window.__pocketSw = (function () {
       <div class="term-head">
         <span class="title" id="termTitle">Terminal</span>
         <span class="state" id="termState"></span>
+        <button id="termRun" hidden>▶ Executar</button>
+        <button id="gameMode" aria-pressed="false" title="Terminal em tela cheia, para jogar">Tela cheia</button>
+        <button id="copyTerm" aria-label="Copiar o que está no terminal">Copiar</button>
         <button id="clear">Limpar</button>
       </div>
       <div class="term-scroll" id="termScroll">
@@ -180,13 +183,7 @@ window.__pocketSw = (function () {
         </form>
         <div id="keyForm" hidden>
           <div class="pad">
-            <button data-key="ArrowLeft" aria-label="Seta para a esquerda">←</button>
-            <button data-key="ArrowUp" aria-label="Seta para cima">↑</button>
-            <button data-key="ArrowDown" aria-label="Seta para baixo">↓</button>
-            <button data-key="ArrowRight" aria-label="Seta para a direita">→</button>
-            <button data-key="Enter">Enter</button>
-            <button data-key=" ">Espaço</button>
-            <button data-key="Escape">Esc</button>
+            <span class="pad-keys" id="padKeys"></span>
             <input id="keyInput" aria-label="Tecla" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="ou digite a tecla">
           </div>
         </div>

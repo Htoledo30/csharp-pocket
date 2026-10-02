@@ -75,3 +75,25 @@ export function installHint() {
 export const offlineSupported = () => 'serviceWorker' in navigator && !!navigator.serviceWorker.controller;
 export const flagSeen = (key) => local.get('pocket.seen.' + key) === '1';
 export const setSeen = (key) => local.set('pocket.seen.' + key, '1');
+
+// Android/Chrome: o navegador oferece instalar; guardamos o aviso para um botão nos Ajustes.
+let installEvent = null;
+export function listenInstallPrompt() {
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvent = e; });
+  window.addEventListener('appinstalled', () => { installEvent = null; });
+}
+export const canPromptInstall = () => installEvent !== null;
+export async function promptInstall() {
+  if (!installEvent) return false;
+  installEvent.prompt();
+  try { await installEvent.userChoice; } catch (e) { /* sem resposta */ }
+  installEvent = null;
+  return true;
+}
+
+// Quantas vezes o app foi aberto (para não repetir dicas sempre).
+export function launchCount() {
+  const n = (Number(local.get('pocket.launches', '0')) || 0) + 1;
+  local.set('pocket.launches', String(n));
+  return n;
+}

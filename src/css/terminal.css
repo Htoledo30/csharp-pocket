@@ -3,9 +3,10 @@
   flex: none; display: flex; align-items: center; gap: 10px; padding: 7px 10px 7px 12px; border-bottom: 1px solid var(--term-line);
   font: 500 12px/1 var(--mono); color: var(--term-dim);
 }
-.term-head .title { color: var(--term-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.term-head .title { color: var(--term-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 0 1 auto; }
 .term-head .state { margin-left: auto; white-space: nowrap; }
-.term-head button { border: 1px solid var(--term-line); background: transparent; color: var(--term-dim); border-radius: 6px; height: 26px; padding: 0 9px; font: inherit; }
+.term-head #copyTerm { margin-left: 0; }
+.term-head button { flex: none; white-space: nowrap; border: 1px solid var(--term-line); background: transparent; color: var(--term-dim); border-radius: 6px; height: 26px; padding: 0 9px; font: inherit; }
 .term-head button:hover { color: var(--term-fg); }
 .term-scroll { flex: 1 1 0; min-height: 0; overflow: auto; padding: 10px 12px 14px; font: 400 var(--code-size)/var(--lh) var(--mono); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .screen > div { white-space: pre-wrap; overflow-wrap: anywhere; min-height: var(--lh); }
@@ -46,3 +47,18 @@
 
 /* Blocos e traços do terminal (█ ▓ ░): um contorno fininho fecha as frestas entre as células. */
 .blk { -webkit-text-stroke: 0.7px currentColor; }
+
+.pad-keys { display: contents; }
+
+/* Modo jogo: só o terminal, em tela cheia, com as teclas grandes. */
+.app.game .head, .app.game .tabs, .app.game .pane.code { display: none; }
+.app.game .panes { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.app.game .pane.term { display: flex; }
+.app.game { padding-top: max(6px, var(--safe-t)); padding-bottom: max(6px, var(--safe-b)); gap: 0; }
+.app.game .ask button { height: 48px; min-width: 52px; font-size: 16px; }
+.app.game .ask input { height: 44px; }
+
+.app.game .term-head .title { display: none; }
+.app.game .term-head .state { margin-left: 0; margin-right: auto; }
+.term-head { overflow-x: auto; scrollbar-width: none; }
+.term-head::-webkit-scrollbar { display: none; }

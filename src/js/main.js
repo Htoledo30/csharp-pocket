@@ -19,21 +19,30 @@ import { initMore } from './more.js';
 import { initSettingsUi } from './settings-ui.js';
 import { initBrackets } from './brackets.js';
 import { initHistory } from './history.js';
+import { initPad } from './pad.js';
 import { initDataUi } from './data-ui.js';
 import { applySettings } from './settings.js';
 import { spawn } from './engine.js';
 import { note } from './terminal.js';
-import { installFirstTime, watchUpdates, keepStorage, offlineSupported } from './pwa.js';
+import { installFirstTime, watchUpdates, keepStorage, offlineSupported, installHint, listenInstallPrompt, launchCount } from './pwa.js';
 
 // Mantém o app dentro da área visível quando o teclado do celular abre.
 function fitToKeyboard() {
   if (!window.visualViewport) return;
+  const app = $('app');
   const fit = () => {
     const vv = window.visualViewport;
-    if (vv.height < window.innerHeight - 60) $('app').style.setProperty('--app-h', vv.height + 'px');
-    else $('app').style.removeProperty('--app-h');
+    // O teclado do celular encolhe a área visível (e o iOS ainda pode deslocá-la): o app acompanha as duas coisas.
+    if (vv.height < window.innerHeight - 60) {
+      app.style.setProperty('--app-h', vv.height + 'px');
+      app.style.setProperty('--app-y', vv.offsetTop + 'px');
+    } else {
+      app.style.removeProperty('--app-h');
+      app.style.removeProperty('--app-y');
+    }
   };
   window.visualViewport.addEventListener('resize', fit);
+  window.visualViewport.addEventListener('scroll', fit);
 }
 
 async function main() {
@@ -46,6 +55,7 @@ async function main() {
   initHints();
   initKeybar();
   initEditing();
+  initPad();
   initRun();
   initSteps();
   initCola();
@@ -61,11 +71,13 @@ async function main() {
   initDataUi();
   applySettings();
   fitToKeyboard();
+  listenInstallPrompt();
   await bootProjects();
 
   const offline = offlineSupported() ? ' Depois disso o app também funciona sem internet.' : '';
+  const tip = installHint() && launchCount() <= 3 ? '\n\n<b>Dica:</b> ' + installHint() : '';
   note('hint', '<b>O compilador roda aqui no navegador.</b> A primeira abertura baixa o .NET (cerca de 25 MB); depois disso cada execução é local e leva uma fração de segundo.' + offline +
-    '\n\nToque em <b>Executar</b>. Quando o programa pedir texto ou uma tecla, a resposta é digitada aqui embaixo, na hora.');
+    '\n\nToque em <b>Executar</b>. Quando o programa pedir texto ou uma tecla, a resposta é digitada aqui embaixo, na hora.' + tip);
   spawn();
   watchUpdates();
   keepStorage();
