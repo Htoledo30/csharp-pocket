@@ -70,7 +70,11 @@
 }
 @media (max-width: 699px) {
   .app { gap: 8px; padding-top: max(8px, var(--safe-t)); padding-bottom: max(8px, var(--safe-b)); }
-  .app.typing .head, .app.typing .tabs { display: none; }
+  /* Escrevendo no celular: o cabeçalho encolhe para uma barrinha com "Fechar teclado" (a saída principal), em vez de sumir. */
+  .app.typing .tabs { display: none; }
+  .app.typing .brand, .app.typing #steps, .app.typing .status, .app.typing #settingsBtn { display: none; }
+  .app.typing .head { gap: 6px; }
+  .app.typing .btn { height: 40px; }
   /* Cabeçalho numa linha só: sobra mais tela para o código */
   .head { flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 6px; }
   .head .top, .head .bar { display: contents; }
@@ -95,11 +99,26 @@
   .head .top { flex: none; }
   .head .status { display: none; }
   .head .bar { flex: 1 1 0; min-width: 0; }
-  .app.typing .head { display: flex; }
 }
 
 @media (pointer: coarse) {
   .btn { height: 40px; }
   .btn.icon { width: 40px; }
   .tabs button { height: 36px; }
+}
+
+/* "Fechar teclado": só aparece enquanto se escreve no celular */
+.kb-hide { display: none; }
+.kb-hide svg { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; width: 16px; height: 16px; }
+@media (max-width: 699px) {
+  .app.typing .kb-hide { display: inline-flex; order: 0; flex: none; gap: 6px; padding: 0 12px; border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .app.typing #run { order: 1; }
+  .app.typing #files { order: 2; }
+}
+
+/* iPhone pequeno com o teclado aberto: o botão Executar do cabeçalho some (a barra de ações tem o seu), e tudo fica mais baixo */
+@media (max-width: 699px) {
+  .app.short.typing #run { display: none; }
+  .app.short.typing .btn { height: 36px; }
+  .app.short.typing .head { padding-bottom: 0; }
 }

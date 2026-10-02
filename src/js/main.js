@@ -35,6 +35,7 @@ function fitToKeyboard() {
   const fit = () => {
     const vv = window.visualViewport;
     // O teclado do celular encolhe a área visível (e o iOS ainda pode deslocá-la): o app acompanha as duas coisas.
+    app.classList.toggle('short', vv.height < 430);      // pouca altura (iPhone pequeno com teclado): botões só com ícone
     if (vv.height < window.innerHeight - 60) {
       app.style.setProperty('--app-h', vv.height + 'px');
       app.style.setProperty('--app-y', vv.offsetTop + 'px');

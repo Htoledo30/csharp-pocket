@@ -60,3 +60,5 @@ Pergunta que guiou: "o que uma pessoa com um iPhone ou iPad precisa ter sempre n
 - [x] Botões maiores em tela de toque; faixa de erro compacta (toque para ler tudo); sem a faixa de arquivos quando há um só
 - [x] Pinça com dois dedos no código muda o tamanho da letra
 - [x] Tocar na bolinha de estado mostra o texto do estado
+- [x] Escrevendo no celular: o cabeçalho não some mais; vira uma barrinha com **Fechar teclado** (a saída do modo de escrita),
+      Executar e o nome do programa. Em iPhone pequeno a barra de ações fica só com ícones.

@@ -270,5 +270,11 @@ export function initEditor() {
   let typingTimer = 0;
   code.addEventListener('focus', () => { clearTimeout(typingTimer); if (narrow() && !code.readOnly) $('app').classList.add('typing'); });
   code.addEventListener('blur', () => { clearTimeout(typingTimer); typingTimer = setTimeout(() => $('app').classList.remove('typing'), 300); });
+  // Saída do modo de escrita: fecha o teclado (e a busca, se estiver com o foco).
+  $('hideKb').addEventListener('click', () => {
+    const active = document.activeElement;
+    if (active && active.blur) active.blur();
+    code.blur();
+  });
   paint();
 }

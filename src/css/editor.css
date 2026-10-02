@@ -160,3 +160,11 @@
   .ftab { height: 32px; }
   .mini { height: 36px; }
 }
+
+/* Pouca altura (teclado aberto num iPhone pequeno): barra de ações só com ícones e teclas mais baixas */
+.app.short .act-btn { height: 42px; }
+.app.short .act-btn span { display: none; }
+.app.short .keys button { height: 36px; }
+.app.short .keys { padding: 4px 8px 5px; }
+.app.short .actions { padding: 3px 6px; }
+.app.short .ftabs { display: none; }

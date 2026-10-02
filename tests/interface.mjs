@@ -13,6 +13,9 @@ try {
   await p.setViewportSize({ width: 390, height: 470 });
   await p.click('#code');
   await p.waitForTimeout(300);
+  check('celular com teclado: sobra uma barra no topo com "Fechar teclado"', await p.isVisible('#hideKb') && await p.isVisible('#files'));
+  const kb = await box(p, '#hideKb');
+  check('"Fechar teclado" é fácil de tocar (grande e no topo)', kb.height >= 38 && kb.y < 20, JSON.stringify(kb));
   check('celular com teclado: a barra de ações está à vista', await p.isVisible('#actions'));
   const labels = await p.$$eval('#actions .act-btn span', (e) => e.map((x) => x.textContent));
   check('Executar, Formatar, Desfazer, Refazer, Teclado e Mais na barra', ['Executar', 'Formatar', 'Desfazer', 'Refazer', 'Teclado', 'Mais'].every((l) => labels.includes(l)), labels.join(','));
@@ -22,6 +25,13 @@ try {
   const size = await box(p, '#format');
   check('botão com pelo menos 44 px de altura (toque)', size.height >= 44, String(size.height));
   check('o teclado continua com foco ao tocar na barra', await (async () => { await p.click('#format'); return p.evaluate(() => document.activeElement.id === 'code'); })());
+
+  // sair do modo de escrita
+  await p.click('#hideKb');
+  await p.waitForTimeout(500);
+  check('Fechar teclado tira o foco do código e volta ao normal', await p.evaluate(() => document.activeElement.id !== 'code' && !document.getElementById('app').classList.contains('typing')));
+  check('"Fechar teclado" some quando não está escrevendo', await p.isHidden('#hideKb'));
+  await p.click('#code');
 
   // Formatar organiza o código e o cursor fica onde estava
   await setCode(p, 'int x = 1;\nif (x > 0)\n{\nConsole.WriteLine(x);\n   if (x > 1)\n{\n  Console.WriteLine("a");\n}\n}\n');
