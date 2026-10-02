@@ -11,6 +11,8 @@ import { initRun } from './run.js';
 import { initSteps } from './steps.js';
 import { initCola } from './cola.js';
 import { initProjectsUi, bootProjects } from './projects-ui.js';
+import { initProblems } from './problems.js';
+import { initLanguage } from './language.js';
 import { applySettings } from './settings.js';
 import { spawn } from './engine.js';
 import { note } from './terminal.js';
@@ -41,6 +43,8 @@ async function main() {
   initSteps();
   initCola();
   initProjectsUi();
+  initProblems();
+  initLanguage();
   applySettings();
   fitToKeyboard();
   await bootProjects();

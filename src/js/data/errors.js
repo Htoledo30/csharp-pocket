@@ -115,3 +115,15 @@ export function explainRuntime(first) {
   for (const [re, f] of RUNTIME) if (re.test(first)) { try { return f(first); } catch (e) { return null; } }
   return null;
 }
+
+// Alguns erros do Roslyn enganam quem está começando. Falta de ; num "int y = 5" seguido de outra linha
+// vira "esperava uma vírgula": aqui isso volta a ser o que de fato é, um ponto e vírgula que faltou.
+export function refine(d, source) {
+  if (!d.line || !source) return d;
+  if (d.id === 'CS1003' && /'[,;]' expected/.test(d.message)) {
+    const line = source.split('\n')[d.line - 1] || '';
+    const rest = line.slice(Math.max(0, d.col - 1)).replace(/\/\/.*$/, '').trim();
+    if (rest === '') return { ...d, id: 'CS1002', message: '; expected' };
+  }
+  return d;
+}

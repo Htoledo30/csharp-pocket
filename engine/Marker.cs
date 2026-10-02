@@ -13,15 +13,17 @@ sealed class StepMarker : CSharpSyntaxRewriter
 {
     readonly SemanticModel model;
     readonly bool withVariables;
+    readonly int baseLine;   // arquivo * Host.FileStride: o número da linha também diz de qual arquivo ela é
 
-    public StepMarker(SemanticModel model, bool withVariables)
+    public StepMarker(SemanticModel model, bool withVariables, int baseLine = 0)
     {
         this.model = model;
         this.withVariables = withVariables;
+        this.baseLine = baseLine;
     }
 
-    static int LineOf(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-    static int LineOf(SyntaxToken token) => token.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+    int LineOf(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line + 1 + baseLine;
+    int LineOf(SyntaxToken token) => token.GetLocation().GetLineSpan().StartLinePosition.Line + 1 + baseLine;
 
     static string Where(ISymbol symbol)
     {

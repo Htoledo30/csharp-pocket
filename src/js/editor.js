@@ -170,9 +170,11 @@ export const fontSize = () => parseFloat(getComputedStyle(code).fontSize) || 14;
 
 // ---------------------------------------------------------------- ganchos de teclado
 // Outros módulos (sugestões, por exemplo) podem tratar a tecla antes do editor.
-const keyHooks = [], inputHooks = [];
+const keyHooks = [], inputHooks = [], editHooks = [];
 export const addKeyHook = (fn) => keyHooks.push(fn);
 export const addInputHook = (fn) => inputHooks.push(fn);
+// Roda antes dos avisos de "o código mudou": quem guarda o texto precisa vir primeiro, senão os outros leem o texto antigo.
+export const addEditHook = (fn) => editHooks.push(fn);
 
 const CLOSERS = { '{': '}', '(': ')', '[': ']', '"': '"' };
 
@@ -245,6 +247,7 @@ export function initEditor() {
     if (decor.lines.size || decor.squiggles.length) { decor.lines = new Map(); decor.squiggles = []; }
     paint();
     reveal();
+    for (const hook of editHooks) hook(code.value);
     bus.emit('edit', code.value);
   });
   for (const type of ['keyup', 'click']) code.addEventListener(type, reveal);

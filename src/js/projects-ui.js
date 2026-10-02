@@ -1,8 +1,10 @@
 // A janela "Meus programas": abrir, criar, renomear, apagar e começar por um exemplo.
 import { $, bus, toast } from './util.js';
-import { setCode, scroller, code } from './editor.js';
+import { setCode, scroller, code, addEditHook } from './editor.js';
 import { hideSuggest } from './suggest.js';
 import { showTab } from './tabs.js';
+import { renderTabs, initFileTabs } from './filetabs.js';
+import { clearDiagnostics, setActiveFileIndex } from './diagnostics.js';
 import { EXAMPLES, exampleCode } from './examples.js';
 import {
   state, liveProjects, projectById, currentProject, activeFile, addProject, renameProject, deleteProject,
@@ -35,6 +37,9 @@ export function openProject(id, quiet) {
   setCurrent(id);
   setCode(activeFile(p).code);
   showCurrent();
+  clearDiagnostics();
+  setActiveFileIndex(p.active);
+  renderTabs();
   scroller.scrollTop = 0; scroller.scrollLeft = 0;
   code.setSelectionRange(0, 0);
   hideSuggest();
@@ -140,9 +145,12 @@ export async function bootProjects() {
   persist();
   setCode(activeFile(currentProject()).code);
   showCurrent();
+  setActiveFileIndex(currentProject().active);
+  renderTabs();
 }
 
 export function initProjectsUi() {
+  initFileTabs();
   $('files').addEventListener('click', openFiles);
   $('filesClose').addEventListener('click', closeFiles);
   $('filesBack').addEventListener('click', (e) => { if (e.target === $('filesBack')) closeFiles(); });
@@ -164,6 +172,6 @@ export function initProjectsUi() {
     const b = e.target.closest('button[data-ex]');
     if (b) startFromExample(b.dataset.ex, b.textContent.trim());
   });
-  bus.on('edit', saveCode);
+  addEditHook(saveCode);
   bus.on('projects:changed', () => refreshFiles());
 }

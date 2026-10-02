@@ -4,9 +4,13 @@ import { $, esc, bus } from './util.js';
 import { TOKEN, insideTextOrComment } from './highlight.js';
 import { code, scroller, lineHeight, charWidth, insert, posToLineCol, lineStartOf, addKeyHook, addInputHook } from './editor.js';
 import { M, STATIC, INSTANCE, TYPE_KEY, SNIPPETS, COMMON_WORDS, NOT_A_TYPE } from './data/completions.js';
+import { ask, canAsk } from './engine.js';
+import { projectFiles, currentProject } from './projects.js';
 
 const gutter = $('gutter');
 const acBox = $('ac');
+const KIND_GLYPH = { m: 'ƒ', p: 'p', f: 'f', k: 'k', v: 'v', c: 'C', s: 'S', e: 'E', i: 'I', d: 'D', n: 'N', t: 'T', ev: '⚡', w: 'a', sn: '▸' };
+const KIND_NAME = { m: 'método', p: 'propriedade', f: 'campo', k: 'constante', v: 'variável', c: 'classe', s: 'estrutura', e: 'enum', i: 'interface', d: 'delegate', n: 'namespace', t: 'tipo', ev: 'evento', w: 'palavra do C#', sn: 'modelo pronto' };
 export const ac = { open: false, items: [], index: 0, start: 0, member: false, moved: false };
 
 // Lê o código para saber o que é cada variável e quais membros as classes deste arquivo têm.
@@ -61,13 +65,8 @@ export function scan(src) {
   return { vars, types, words };
 }
 
-export function refreshSuggest() {
-  if (code.selectionStart !== code.selectionEnd) return hideSuggest();
-  const src = code.value, pos = code.selectionStart;
-  const before = src.slice(Math.max(0, pos - 120), pos);
-  const dotted = /([A-Za-z_]\w*)\.(\w*)$/.exec(before);
-  const plain = dotted ? null : /(?:^|[^\w.])([A-Za-z_]\w+)$/.exec(before);
-  if ((!dotted && !plain) || insideTextOrComment(src, pos)) return hideSuggest();
+// A lista pronta (data/completions.js): serve de apoio quando o compilador não pode responder.
+function staticSuggestions(src, pos, dotted, plain) {
   const info = scan(src);
   let pool, prefix;
   if (dotted) {
@@ -75,7 +74,7 @@ export function refreshSuggest() {
     prefix = dotted[2];
     const declared = info.vars.get(owner);
     pool = declared ? (INSTANCE[TYPE_KEY[declared] || declared] || info.types.get(declared)) : (STATIC[owner] || info.types.get(owner));
-    if (!pool) return hideSuggest();
+    if (!pool) return null;
   } else {
     prefix = plain[1];
     const seen = new Set(SNIPPETS.map((it) => it.l));
@@ -88,14 +87,51 @@ export function refreshSuggest() {
     items.sort((a, b) => (b.snip && b.l === prefix ? 1 : 0) - (a.snip && a.l === prefix ? 1 : 0) || (b.l.startsWith(prefix) ? 1 : 0) - (a.l.startsWith(prefix) ? 1 : 0));
     items = items.slice(0, 8);
   }
-  if (!items.length) return hideSuggest();
-  showSuggest(items, pos - prefix.length, !!dotted);
+  return items.length ? { items, start: pos - prefix.length } : null;
+}
+
+// Junta o que o compilador sugeriu com os modelos (cw, for, if...) e as palavras do C# que combinam com o que foi digitado.
+function withExtras(engineItems, prefix) {
+  const low = prefix.toLowerCase();
+  const have = new Set(engineItems.map((it) => it.l));
+  const snippets = SNIPPETS.filter((it) => it.l.startsWith(low)).map((it) => ({ ...it, k: 'sn' }));
+  const words = COMMON_WORDS
+    .filter((w) => w.startsWith(low) && w === w.toLowerCase() && !have.has(w) && !snippets.some((sn) => sn.l === w))
+    .map((w) => ({ ...M(w), k: 'w' }));
+  return snippets.concat(engineItems, words);
+}
+
+let seq = 0;
+
+export function refreshSuggest() {
+  if (code.selectionStart !== code.selectionEnd) { seq++; return hideSuggest(); }
+  const src = code.value, pos = code.selectionStart;
+  const before = src.slice(Math.max(0, pos - 120), pos);
+  const dotted = /([A-Za-z_]\w*)\.(\w*)$/.exec(before);
+  const plain = dotted ? null : /(?:^|[^\w.])([A-Za-z_]\w+)$/.exec(before);
+  if ((!dotted && !plain) || insideTextOrComment(src, pos)) { seq++; return hideSuggest(); }
+  const prefix = dotted ? dotted[2] : plain[1];
+  const fallback = () => {
+    const r = staticSuggestions(src, pos, dotted, plain);
+    if (r) showSuggest(r.items, r.start, !!dotted); else hideSuggest();
+  };
+  if (!canAsk()) { seq++; return fallback(); }
+  const mine = ++seq;
+  ask('complete', { files: projectFiles(), file: currentProject().active, pos }).then((res) => {
+    if (mine !== seq || code.selectionStart !== pos) return;
+    if (!res) return fallback();
+    let items = res.items.map((it) => ({ l: it.l, i: it.i, d: it.d, k: it.k }));
+    if (!dotted) items = withExtras(items, prefix);
+    items = items.filter((it) => it.l !== prefix || it.k === 'sn');
+    if (!items.length) return hideSuggest();
+    showSuggest(items.slice(0, 40), res.start, !!dotted);
+  });
 }
 
 // Mostra a lista, ancorada na posição `start` do texto.
 export function showSuggest(items, start, member) {
   ac.items = items; ac.index = 0; ac.start = start; ac.member = member; ac.moved = false; ac.open = true;
-  acBox.innerHTML = items.map((it, i) => '<div role="option" data-i="' + i + '" aria-selected="' + (i === 0) + '"><b>' + esc(it.l) + '</b>' + (it.d ? '<span>' + esc(it.d) + '</span>' : '') + '</div>').join('');
+  acBox.innerHTML = items.map((it, i) => '<div role="option" data-i="' + i + '" aria-selected="' + (i === 0) + '">' + (it.k ? '<em class="kd k-' + it.k + '" title="' + (KIND_NAME[it.k] || '') + '">' + (KIND_GLYPH[it.k] || '·') + '</em>' : '') + '<b>' + esc(it.l) + '</b>' + (it.d ? '<span>' + esc(it.d) + '</span>' : '') + '</div>').join('');
   acBox.hidden = false;
   const { line, col } = posToLineCol(start);
   const lh = lineHeight(), cw = charWidth();

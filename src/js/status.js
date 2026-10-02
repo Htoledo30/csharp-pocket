@@ -1,7 +1,7 @@
 // A bolinha e o texto no canto: carregando, pronto, executando, esperando você.
 import { $ } from './util.js';
 
-export const engineState = { ready: false, version: '', loading: true };
+export const engineState = { ready: false, version: '', loading: true, live: false };
 let busyProbe = () => false;
 export const setBusyProbe = (fn) => { busyProbe = fn; };
 export const isBusy = () => busyProbe();

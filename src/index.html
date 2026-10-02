@@ -66,6 +66,7 @@ window.__pocketSw = (function () {
 
   <main class="panes">
     <section class="pane code" id="paneCode" aria-label="Código">
+      <div class="ftabs" id="ftabs" role="tablist" aria-label="Arquivos do programa"></div>
       <div class="scroller" id="scroller">
         <div class="gutter" id="gutter" aria-hidden="true"></div>
         <div class="sheet">
@@ -73,7 +74,12 @@ window.__pocketSw = (function () {
           <pre id="hl" aria-hidden="true"></pre>
           <textarea id="code" aria-label="Program.cs" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off"></textarea>
           <div class="ac" id="ac" role="listbox" aria-label="Sugestões" hidden></div>
+          <div class="sig" id="sig" aria-live="polite" hidden></div>
         </div>
+      </div>
+      <div class="problem" id="problem" role="status" hidden>
+        <div class="problem-text"><b id="problemWhere"></b><span id="problemMsg"></span></div>
+        <div class="problem-fixes" id="problemFixes"></div>
       </div>
       <div class="wordhint" id="hint" hidden>
         <button id="hintBtn" aria-expanded="false" aria-controls="hintCard"><b id="hintWord"></b><span id="hintText"></span><i>exemplo</i></button>

@@ -107,6 +107,64 @@ export function setCurrent(id) {
   persist();
 }
 
+// ---------------------------------------------------------------- arquivos do projeto
+// Os arquivos (.cs) do programa aberto: um por classe, por exemplo. O primeiro é o principal.
+export const projectFiles = (project = currentProject()) => (project ? project.files.map((f) => ({ name: f.name, code: f.code })) : []);
+
+// "jogador" vira "Jogador.cs"; nomes repetidos ou estranhos são recusados (devolve null).
+export function cleanFileName(raw, project = currentProject(), ignoreIndex = -1) {
+  let name = String(raw || '').trim().replace(/\s+/g, '');
+  if (!name) return null;
+  if (!/\.cs$/i.test(name)) name += '.cs';
+  if (!/^[A-Za-z_][A-Za-z0-9_.-]*\.cs$/.test(name) || name.length > 40) return null;
+  if (project.files.some((f, i) => i !== ignoreIndex && f.name.toLowerCase() === name.toLowerCase())) return null;
+  return name;
+}
+
+export function setActiveFile(index) {
+  const p = currentProject();
+  if (!p || !p.files[index]) return false;
+  p.active = index;
+  persist();
+  return true;
+}
+
+export function addFile(rawName, code = '') {
+  const p = currentProject();
+  const name = cleanFileName(rawName, p);
+  if (!p || !name) return -1;
+  p.files.push({ name, code });
+  p.active = p.files.length - 1;
+  p.updated = Date.now();
+  delete p.seed;
+  persist();
+  bus.emit('projects:changed', p.id);
+  return p.active;
+}
+
+export function renameFile(index, rawName) {
+  const p = currentProject();
+  const name = cleanFileName(rawName, p, index);
+  if (!p || !p.files[index] || !name) return false;
+  if (p.files[index].name === name) return true;
+  p.files[index].name = name;
+  p.updated = Date.now();
+  persist();
+  bus.emit('projects:changed', p.id);
+  return true;
+}
+
+export function removeFile(index) {
+  const p = currentProject();
+  if (!p || p.files.length < 2 || !p.files[index]) return false;
+  p.files.splice(index, 1);
+  p.active = Math.min(p.active, p.files.length - 1);
+  p.updated = Date.now();
+  persist();
+  bus.emit('projects:changed', p.id);
+  return true;
+}
+
 // Gravar já, antes de o aplicativo ser fechado ou ir para o fundo (o iPhone pode encerrá-lo a qualquer momento).
 export function initProjectsPersistence() {
   const flush = () => persist(true);

@@ -8,9 +8,11 @@ export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 
 let nextPort = 8300 + Math.floor(Math.random() * 400);
 export async function startServer({ folder = 'src', isolated = false } = {}) {
+  // POCKET_URL=https://... testa o site publicado em vez de uma cópia local.
+  if (process.env.POCKET_URL) return { url: process.env.POCKET_URL, close: async () => {} };
   const port = nextPort++;
   const server = await serve({ root: path.join(root, folder), port, isolated, quiet: true });
-  return { url: `http://localhost:${port}/`, close: () => new Promise((r) => server.close(r)) };
+  return { url: `http://localhost:${port}/`, close: () => new Promise((r) => { server.closeAllConnections(); server.close(r); }) };
 }
 
 export async function startBrowser(kind = process.env.BROWSER || 'chrome') {
@@ -33,8 +35,10 @@ export async function open(browser, url, contextOptions = DESKTOP) {
 export const ready = (page, timeout = 90000) => page.waitForFunction(() => document.getElementById('status').dataset.state === 'ready', null, { timeout });
 export const idle = (page, timeout = 90000) => page.waitForFunction(() => document.getElementById('run').dataset.mode === 'run' && document.getElementById('status').dataset.state === 'ready', null, { timeout });
 export const setCode = (page, source) => page.evaluate((v) => { const c = document.getElementById('code'); c.value = v; c.dispatchEvent(new Event('input')); }, source);
-export const notes = (page) => page.evaluate(() => document.getElementById('notes').innerText);
-export const screen = (page) => page.evaluate(() => document.getElementById('screen').innerText);
+// O terminal desenha no próximo quadro: esperar dois quadros antes de ler o texto.
+const frames = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+export const notes = (page) => page.evaluate(async (f) => { await eval(f)(); return document.getElementById('notes').innerText; }, frames.toString());
+export const screen = (page) => page.evaluate(async (f) => { await eval(f)(); return document.getElementById('screen').innerText; }, frames.toString());
 
 // Execução simples: coloca o código, aperta Executar e espera acabar. Devolve o que o terminal mostrou.
 export async function runCode(page, source) {
@@ -50,3 +54,12 @@ export function check(name, ok, detail = '') {
   if (!ok) process.exitCode = 1;
   return ok;
 }
+
+// Digita de verdade no editor (com foco), para acionar sugestões e ajuda como um usuário.
+export async function typeInEditor(page, text, { reset } = {}) {
+  if (reset !== undefined) await setCode(page, reset);
+  await page.click('#code');
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type(text, { delay: 15 });
+}
+export const editorText = (page) => page.inputValue('#code');

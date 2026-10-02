@@ -1,26 +1,31 @@
 // Passo a passo. O motor roda o programa inteiro uma vez e anota cada comando: a linha, as variáveis
 // naquele momento e quanto já tinha sido escrito no terminal. Andar pelos passos é só navegar nessa gravação.
 import { $, esc, bus, narrow, toast } from './util.js';
-import { code, setLineMarks, setStepLine, scrollToLine } from './editor.js';
+import { code, setStepLine, scrollToLine } from './editor.js';
 import { hideSuggest } from './suggest.js';
 import { clearHint } from './hints.js';
 import { term, notes, note, termSize, scrollEnd } from './terminal.js';
 import { showTab } from './tabs.js';
 import { engineState, setStatus, idleStatus } from './status.js';
 import { nextRun, post, restartWorker, hasWorker, spawn } from './engine.js';
-import { onCompiled, showInputBox } from './run.js';
+import { onCompiled, showInputBox, decodeLine } from './run.js';
+import { currentProject, projectFiles } from './projects.js';
+import { clearDiagnostics } from './diagnostics.js';
+import { switchFile } from './filetabs.js';
+import { loadFs } from './fsstore.js';
 import { explainRuntime } from './data/errors.js';
 
 export let stepper = null;
 export const isStepping = () => stepper !== null;
 
-export function startSteps() {
+export async function startSteps() {
   bus.emit('steps:starting');
   if (stepper) endSteps();
   term.reset();
   notes.textContent = '';
-  setLineMarks(new Map());
-  stepper = { run: nextRun(), source: code.value, inputs: [], seed: (Math.random() * 0x7fffffff) | 0, index: 0, steps: null, strings: [], output: '', shown: 0, status: '', detail: '', waiting: false, resumed: false };
+  clearDiagnostics();
+  const files = projectFiles();
+  stepper = { run: nextRun(), files, fs: {}, projectId: currentProject().id, inputs: [], seed: (Math.random() * 0x7fffffff) | 0, index: 0, steps: null, strings: [], output: '', shown: 0, status: '', detail: '', waiting: false, resumed: false };
   code.readOnly = true;
   code.blur();
   hideSuggest();
@@ -36,12 +41,15 @@ export function startSteps() {
   showTab('code');
   setStepLine(0);
   if (!hasWorker()) spawn();
+  const mine = stepper;
+  mine.fs = await loadFs(mine.projectId);
+  if (stepper !== mine) return;      // saiu do passo a passo enquanto os arquivos eram lidos
   postTrace();
 }
 
 function postTrace() {
   const size = termSize();
-  post({ type: 'trace', run: stepper.run, source: stepper.source, inputs: stepper.inputs, cols: size.cols, rows: size.rows, seed: stepper.seed });
+  post({ type: 'trace', run: stepper.run, files: stepper.files, fs: stepper.fs, inputs: stepper.inputs, cols: size.cols, rows: size.rows, seed: stepper.seed });
 }
 
 export function endSteps() {
@@ -87,7 +95,8 @@ function onTraced(m) {
     const lines = s.detail.slice(cut + 1).split('\n');
     const plain = explainRuntime(lines[0]);
     s.errorText = plain || lines[0];
-    note('error', 'Erro durante a execução na linha ' + (Number(s.detail.slice(0, cut)) || '?') + '\n' + esc(plain || lines[0]) + (plain ? '<span class="raw">' + esc(lines[0]) + '</span>' : ''));
+    const at = decodeLine(Number(s.detail.slice(0, cut)) || 0);
+    note('error', 'Erro durante a execução na linha ' + (at.line || '?') + '\n' + esc(plain || lines[0]) + (plain ? '<span class="raw">' + esc(lines[0]) + '</span>' : ''));
   }
   $('stepRange').max = String(s.steps.length - 1);
   $('stepRange').disabled = false;
@@ -104,7 +113,10 @@ function varsOf(step, strings) {
 function showStep() {
   const s = stepper;
   const step = s.steps[s.index];
-  const line = step[0], emitted = step[1], where = s.strings[step[2]];
+  const place = decodeLine(step[0]);
+  const line = place.line, emitted = step[1], where = s.strings[step[2]];
+  const cur = currentProject();
+  if (line && cur && place.file !== cur.active && cur.files[place.file]) switchFile(place.file, { keepCaret: true });
   const last = s.index === s.steps.length - 1;
 
   // terminal: exatamente o que já tinha sido escrito quando esta linha foi alcançada
@@ -149,7 +161,7 @@ function showStep() {
   else if (last) msg = 'Último passo do programa.';
   $('stepMsg').textContent = msg;
   $('stepMsg').className = 'step-msg' + (last && s.status === 'error' ? ' bad' : '');
-  $('stepInfo').textContent = 'Passo ' + (s.index + 1) + ' de ' + s.steps.length + (line ? ' · vai executar a linha ' + line : '') + (where ? ' · dentro de ' + where : '');
+  $('stepInfo').textContent = 'Passo ' + (s.index + 1) + ' de ' + s.steps.length + (line ? ' · vai executar ' + (s.files.length > 1 && s.files[place.file] ? s.files[place.file].name + ', ' : '') + 'a linha ' + line : '') + (where ? ' · dentro de ' + where : '');
   $('stepBack').disabled = s.index === 0;
   $('stepNext').disabled = last && s.status !== 'need';
   $('stepRange').value = String(s.index);
@@ -195,7 +207,7 @@ function giveStep(item) {
 export function initSteps() {
   bus.on('engine:message', (m) => {
     if (!stepper || m.run !== stepper.run) return;
-    if (m.type === 'compiled') onCompiled(m.result);
+    if (m.type === 'compiled') onCompiled(m.result, stepper.files);
     else if (m.type === 'traced') onTraced(m);
   });
   bus.on('engine:failed', () => { if (stepper) { stepper.steps = stepper.steps || []; stepper.resumed = false; endSteps(); } });

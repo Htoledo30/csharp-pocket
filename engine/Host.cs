@@ -14,33 +14,41 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Pocket;
 
+// A ponte entre a página e o compilador. As partes ficam em arquivos separados:
+//   Host.cs            referências, compilar e executar
+//   Host.Workspace.cs  os arquivos do projeto e a compilação que é reaproveitada a cada mudança
+//   Host.Language.cs   erros ao digitar, sugestões e ajuda dos parâmetros
+//   Host.Fs.cs         os arquivos que o programa grava (File.WriteAllText) entre uma execução e outra
 public static partial class Host
 {
+    // --- O que o motor chama na página (veja worker.js) ---
     [JSImport("out", "pocket")]
     internal static partial void JsOut(string s);
 
     [JSImport("need", "pocket")]
     internal static partial void JsNeed(string kind);
 
+    // Console real: espera de verdade o que o usuário digita (só quando a página está "isolada" e há SharedArrayBuffer).
+    [JSImport("read", "pocket")]
+    internal static partial string JsRead(string kind);
+
+    [JSImport("poll", "pocket")]
+    internal static partial bool JsPoll();
+
+    [JSImport("sleep", "pocket")]
+    internal static partial bool JsSleep(int ms);
+
+    [JSImport("aborted", "pocket")]
+    internal static partial bool JsAborted();
+
     static readonly List<MetadataReference> refs = new();
     static byte[] asmBytes, trackedBytes, stepBytes;
-    static string stepSource;
-    internal static bool IsUserType(Type t) => running != null && t.Assembly == running;
+    static string compiledKey, stepKey;
     static Assembly running;
-    static string compiledSource;
-    static int counter;
-
-    const string Usings =
-        "global using System;\n" +
-        "global using System.IO;\n" +
-        "global using System.Linq;\n" +
-        "global using System.Collections.Generic;\n" +
-        "global using System.Threading;\n" +
-        "global using System.Threading.Tasks;\n";
+    internal static bool IsUserType(Type t) => running != null && t.Assembly == running;
 
     public static void Main() { }
 
@@ -54,8 +62,8 @@ public static partial class Host
                 refs.Add(MetadataReference.CreateFromImage(image, filePath: name));
                 return true;
             }
-            // Framework assemblies ship as Webcil wrapped in a wasm module: find the
-            // payload in the data section, then the metadata through the CLI header.
+            // Os assemblies do .NET vêm em Webcil dentro de um módulo wasm: achar o conteúdo na seção de dados
+            // e depois os metadados pelo cabeçalho CLI.
             int pos = 8, payload = -1;
             while (pos < image.Length)
             {
@@ -64,12 +72,12 @@ public static partial class Host
                 if (id == 11)
                 {
                     int p = pos;
-                    Leb(image, ref p);                 // segment count
-                    Leb(image, ref p);                 // segment 0: passive
+                    Leb(image, ref p);                 // quantidade de segmentos
+                    Leb(image, ref p);                 // segmento 0: passivo
                     int len0 = (int)Leb(image, ref p);
                     p += len0;
-                    Leb(image, ref p);                 // segment 1: passive
-                    Leb(image, ref p);                 // its length
+                    Leb(image, ref p);                 // segmento 1: passivo
+                    Leb(image, ref p);                 // seu tamanho
                     payload = p;
                     break;
                 }
@@ -130,50 +138,13 @@ public static partial class Host
                ",\"refs\":" + refs.Count + "}";
     }
 
-    static bool OnlySleeps(string source)
-    {
-        // The Thread stand-in only knows Sleep; leave real Thread usage alone.
-        foreach (Match m in Regex.Matches(source, @"\bThread\b(\s*\.\s*(\w+))?"))
-        {
-            if (!m.Groups[2].Success || m.Groups[2].Value != "Sleep") return false;
-        }
-        return true;
-    }
-
-    static CSharpCompilation Build(string source, bool trackLines, out SyntaxTree userTree)
-    {
-        var parse = new CSharpParseOptions(LanguageVersion.Latest);
-        string prelude = Usings +
-            "global using Console = Pocket.Console;\n" +
-            "global using Random = Pocket.Random;\n" +
-            (OnlySleeps(source) ? "global using Thread = Pocket.Thread;\n" : "");
-        userTree = CSharpSyntaxTree.ParseText(SourceText.From(source, Encoding.UTF8), parse, "Program.cs");
-        if (trackLines)
-            userTree = CSharpSyntaxTree.Create((CSharpSyntaxNode)new LineMarker().Visit(userTree.GetRoot()), parse, "Program.cs", Encoding.UTF8);
-        var trees = new[]
-        {
-            CSharpSyntaxTree.ParseText(SourceText.From(prelude, Encoding.UTF8), parse, "Pocket.Usings.cs"),
-            userTree,
-        };
-        var options = new CSharpCompilationOptions(
-            OutputKind.ConsoleApplication,
-            optimizationLevel: OptimizationLevel.Release,
-            allowUnsafe: true,
-            concurrentBuild: false)
-            .WithSpecificDiagnosticOptions(new Dictionary<string, ReportDiagnostic>
-            {
-                ["CS1701"] = ReportDiagnostic.Suppress,
-                ["CS1702"] = ReportDiagnostic.Suppress,
-                ["CS8019"] = ReportDiagnostic.Suppress,
-            });
-        return CSharpCompilation.Create("Programa" + (++counter), trees, refs, options);
-    }
+    // ------------------------------------------------------------------ compilar
 
     [JSExport]
-    internal static string Compile(string source)
+    internal static string Compile(string packed)
     {
         var sw = Stopwatch.StartNew();
-        var compilation = Build(source, false, out SyntaxTree userTree);
+        Update(packed);
         var pe = new MemoryStream();
         EmitResult result = compilation.Emit(pe);
 
@@ -187,28 +158,25 @@ public static partial class Host
                      .ThenBy(d => d.Location.SourceSpan.Start))
         {
             if (++shown > 40) break;
-            var span = d.Location.GetLineSpan();
-            bool mine = d.Location.SourceTree == userTree;
             if (!first) sb.Append(',');
             first = false;
-            sb.Append("{\"id\":").Append(Json(d.Id))
-              .Append(",\"severity\":").Append(Json(d.Severity == DiagnosticSeverity.Error ? "error" : "warning"))
-              .Append(",\"message\":").Append(Json(d.GetMessage()))
-              .Append(",\"line\":").Append(mine ? span.StartLinePosition.Line + 1 : 0)
-              .Append(",\"col\":").Append(mine ? span.StartLinePosition.Character + 1 : 0)
-              .Append('}');
+            AppendDiagnostic(sb, d, false);
         }
         if (result.Success)
         {
             try
             {
-                foreach (var (line, col, text) in Tips.Find(compilation.GetSemanticModel(userTree), userTree.GetRoot()))
+                for (int i = 0; i < files.Length; i++)
                 {
-                    if (++shown > 46) break;
-                    if (!first) sb.Append(',');
-                    first = false;
-                    sb.Append("{\"id\":\"DICA\",\"severity\":\"tip\",\"message\":").Append(Json(text))
-                      .Append(",\"line\":").Append(line).Append(",\"col\":").Append(col).Append('}');
+                    foreach (var (line, col, text) in Tips.Find(compilation.GetSemanticModel(files[i].Tree), files[i].Tree.GetRoot()))
+                    {
+                        if (++shown > 46) break;
+                        if (!first) sb.Append(',');
+                        first = false;
+                        sb.Append("{\"id\":\"DICA\",\"severity\":\"tip\",\"message\":").Append(Json(text))
+                          .Append(",\"file\":").Append(i)
+                          .Append(",\"line\":").Append(line).Append(",\"col\":").Append(col).Append('}');
+                    }
                 }
             }
             catch (Exception)
@@ -218,13 +186,15 @@ public static partial class Host
         sb.Append("],\"ms\":").Append(sw.ElapsedMilliseconds).Append('}');
 
         asmBytes = result.Success ? pe.ToArray() : null;
-        compiledSource = result.Success ? source : null;
+        compiledKey = result.Success ? packed : null;
         trackedBytes = null;
         return sb.ToString();
     }
 
     [JSExport]
-    internal static bool IsCompiled(string source) => asmBytes != null && compiledSource == source;
+    internal static bool IsCompiled(string packed) => asmBytes != null && compiledKey == packed;
+
+    // ------------------------------------------------------------------ executar
 
     static async Task Execute(byte[] image)
     {
@@ -234,7 +204,7 @@ public static partial class Host
         MethodInfo entry = asm.EntryPoint ?? throw new InvalidOperationException("O programa não tem um método Main.");
         if (entry.Name == "<Main>")
         {
-            // The compiler wraps an async Main in a blocking stub; call the async one directly.
+            // O compilador embrulha um Main assíncrono num Main comum: chamar direto o assíncrono.
             const BindingFlags flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
             MethodInfo real = entry.DeclaringType.GetMethods(flags)
                 .FirstOrDefault(m => (m.Name == "Main" || m.Name == "<Main>$") && typeof(Task).IsAssignableFrom(m.ReturnType));
@@ -251,14 +221,43 @@ public static partial class Host
         return ex;
     }
 
+    // A versão do programa que anota a linha de cada comando (para dizer onde um erro aconteceu).
+    static byte[] BuildTracked()
+    {
+        try
+        {
+            var pe = new MemoryStream();
+            return BuildTrackedCompilation().Emit(pe).Success ? pe.ToArray() : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    // inputs: o que já foi digitado (modo "reexecutar"); skip: quanto da saída já foi mostrado.
+    // live = true: o programa espera de verdade pelo que o usuário digita (Atomics.wait na página).
     [JSExport]
-    internal static async Task<string> Run(string inputs, int skip, int cols, int rows, int seed)
+    internal static async Task<string> Run(string inputs, int skip, int cols, int rows, int seed, bool live)
     {
         if (asmBytes == null) return "error:0:Nada compilado.";
         string[] queue = inputs.Length == 0 ? Array.Empty<string>() : inputs.Split('\u0001');
-        Term.Reset(queue, skip, cols, rows, seed, false);
+        Term.Reset(queue, skip, cols, rows, seed, false, live);
         var sw = Stopwatch.StartNew();
         Exception failure = null;
+
+        if (live)
+        {
+            // Ao vivo não dá para rodar de novo só para descobrir a linha do erro: já roda a versão com as linhas anotadas.
+            trackedBytes ??= BuildTracked();
+            try { await Execute(trackedBytes ?? asmBytes); }
+            catch (Exception ex) { failure = Unwrap(ex); }
+            if (Term.Aborted) return "aborted:" + Term.Emitted;
+            if (Term.Halted) return Term.NeedKind == "limit" ? "limit:" + Term.Emitted : "done:" + Term.Emitted;
+            if (failure == null) return "done:" + Term.Emitted;
+            return "error:" + Term.Line + ":" + Describe(failure);
+        }
+
         try { await Execute(asmBytes); }
         catch (Exception ex) { failure = Unwrap(ex); }
 
@@ -270,18 +269,15 @@ public static partial class Host
         int line = 0;
         if (sw.ElapsedMilliseconds < 4000)
         {
-            // Run the same inputs again, silently, on a build that records the
-            // line being executed. That tells us where the program stopped.
+            // Rodar de novo, em silêncio, com as mesmas entradas, numa versão que anota a linha em execução.
+            // Assim sabemos onde o programa parou.
             try
             {
-                if (trackedBytes == null)
-                {
-                    var pe = new MemoryStream();
-                    if (Build(compiledSource, true, out _).Emit(pe).Success) trackedBytes = pe.ToArray();
-                }
+                trackedBytes ??= BuildTracked();
                 if (trackedBytes != null)
                 {
-                    Term.Reset(queue, 0, cols, rows, seed, true);
+                    FsReset();
+                    Term.Reset(queue, 0, cols, rows, seed, true, false);
                     Exception again = null;
                     try { await Execute(trackedBytes); }
                     catch (Exception ex) { again = Unwrap(ex); }
@@ -295,19 +291,28 @@ public static partial class Host
         return "error:" + line + ":" + text;
     }
 
-    static byte[] BuildSteps(string source)
+    // ------------------------------------------------------------------ passo a passo
+
+    static byte[] BuildSteps()
     {
-        // First with the variables of each line; if that version does not compile, with the lines only.
+        // Primeiro com as variáveis de cada linha; se essa versão não compilar, só com as linhas.
         foreach (bool withVariables in new[] { true, false })
         {
             try
             {
-                var plain = Build(source, false, out SyntaxTree tree);
-                var model = plain.GetSemanticModel(tree);
-                var root = (CSharpSyntaxNode)new StepMarker(model, withVariables).Visit(tree.GetRoot());
-                var marked = CSharpSyntaxTree.Create(root, (CSharpParseOptions)tree.Options, "Program.cs", Encoding.UTF8);
+                var plain = compilation;
+                var marked = new List<(SyntaxTree old, SyntaxTree tree)>();
+                for (int i = 0; i < files.Length; i++)
+                {
+                    var tree = files[i].Tree;
+                    var model = plain.GetSemanticModel(tree);
+                    var root = (CSharpSyntaxNode)new StepMarker(model, withVariables, i * FileStride).Visit(tree.GetRoot());
+                    marked.Add((tree, CSharpSyntaxTree.Create(root, (CSharpParseOptions)tree.Options, tree.FilePath, Encoding.UTF8)));
+                }
+                var next = plain;
+                foreach (var (old, tree) in marked) next = next.ReplaceSyntaxTree(old, tree);
                 var pe = new MemoryStream();
-                if (plain.ReplaceSyntaxTree(tree, marked).Emit(pe).Success) return pe.ToArray();
+                if (next.Emit(pe).Success) return pe.ToArray();
             }
             catch (Exception)
             {
@@ -320,14 +325,14 @@ public static partial class Host
     internal static async Task<string> Trace(string inputs, int cols, int rows, int seed)
     {
         if (asmBytes == null) return "error:0:Nada compilado.";
-        if (stepSource != compiledSource)
+        if (stepKey != compiledKey)
         {
-            stepBytes = BuildSteps(compiledSource);
-            stepSource = compiledSource;
+            stepBytes = BuildSteps();
+            stepKey = compiledKey;
         }
         if (stepBytes == null) return "nostep:";
         string[] queue = inputs.Length == 0 ? Array.Empty<string>() : inputs.Split('\u0001');
-        Term.Reset(queue, 0, cols, rows, seed, false);
+        Term.Reset(queue, 0, cols, rows, seed, false, false);
         Term.NoSleep = true;
         Step.Begin();
         Exception failure = null;
@@ -360,7 +365,7 @@ public static partial class Host
                 if (method == null || method.Module.Assembly != running) continue;
                 string owner = method.DeclaringType?.FullName ?? "";
                 string name = method.Name;
-                // Async and iterator bodies live in a generated MoveNext: show the method they came from.
+                // Corpos async e iteradores vivem num MoveNext gerado: mostrar o método de onde vieram.
                 var machine = Regex.Match(owner, @"^(?<o>.*?)[+.]?<(?<n>[^+]+)>d(__\d+)?$");
                 if (name == "MoveNext" && machine.Success) { owner = machine.Groups["o"].Value; name = machine.Groups["n"].Value; }
                 var local = Regex.Match(name, @"g__(\w+)\|");
@@ -381,42 +386,6 @@ public static partial class Host
         {
         }
         return sb.ToString();
-    }
-
-    sealed class LineMarker : CSharpSyntaxRewriter
-    {
-        static StatementSyntax Mark(SyntaxNode at)
-        {
-            int line = at.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-            return SyntaxFactory.ParseStatement("global::Pocket.Term.Line = " + line + ";");
-        }
-
-        IEnumerable<StatementSyntax> Marked(SyntaxList<StatementSyntax> statements)
-        {
-            foreach (StatementSyntax statement in statements)
-            {
-                if (statement is not LocalFunctionStatementSyntax) yield return Mark(statement);
-                yield return (StatementSyntax)Visit(statement);
-            }
-        }
-
-        public override SyntaxNode VisitBlock(BlockSyntax node)
-            => node.WithStatements(SyntaxFactory.List(Marked(node.Statements).ToList()));
-
-        public override SyntaxNode VisitSwitchSection(SwitchSectionSyntax node)
-            => node.WithStatements(SyntaxFactory.List(Marked(node.Statements).ToList()));
-
-        public override SyntaxNode VisitCompilationUnit(CompilationUnitSyntax node)
-        {
-            var members = new List<MemberDeclarationSyntax>();
-            foreach (MemberDeclarationSyntax member in node.Members)
-            {
-                if (member is GlobalStatementSyntax global && global.Statement is not LocalFunctionStatementSyntax)
-                    members.Add(SyntaxFactory.GlobalStatement(Mark(global)));
-                members.Add((MemberDeclarationSyntax)Visit(member));
-            }
-            return node.WithMembers(SyntaxFactory.List(members));
-        }
     }
 
     internal static string Json(string s)

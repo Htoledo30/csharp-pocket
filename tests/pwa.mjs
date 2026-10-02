@@ -30,6 +30,8 @@ try {
   const first = await runCode(page, 'Console.WriteLine("online");\n');
   check('roda com internet', first.screen.includes('online'));
 
+  check('o modo ao vivo está ativo (console real)', (await page.getAttribute('#app', 'data-live')) === '1');
+
   const cached = await page.evaluate(async () => {
     const names = await caches.keys();
     let count = 0;
@@ -39,8 +41,8 @@ try {
   console.log('   caches:', cached.names.join(', '), '·', cached.count, 'arquivos');
   check('o .NET ficou guardado no aparelho', cached.count > 80, String(cached.count));
 
-  // sem internet
-  await context.setOffline(true);
+  // sem internet: o servidor é desligado (no site publicado, usa o modo offline do navegador)
+  if (process.env.POCKET_URL) await context.setOffline(true); else await server.close();
   await page.reload();
   await ready(page, 60000);
   check('abre sem internet', true);
