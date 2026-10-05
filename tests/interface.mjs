@@ -69,6 +69,18 @@ try {
   const pos = await p.evaluate(() => document.getElementById('code').selectionStart);
   check('segurar a seta anda várias casas', pos <= 6, String(pos));
 
+  // os símbolos mais usados ficam à vista, sem rolar a barra; as setas ← → ficam paradas na ponta
+  const reach = await p.evaluate(() => {
+    const scroll = document.querySelector('.keys-scroll'), r = scroll.getBoundingClientRect();
+    const seen = (sel) => { const b = document.querySelector(sel).getBoundingClientRect(); return b.left >= r.left - 1 && b.right <= r.right + 1; };
+    scroll.scrollLeft = 300;
+    const nav = [...document.querySelectorAll('.keys-nav button')].map((b) => { const q = b.getBoundingClientRect(); return q.left >= 0 && q.right <= window.innerWidth && q.width > 0; });
+    scroll.scrollLeft = 0;
+    return { first: ['[data-pair="{}"]', '[data-pair="()"]', '[data-ins=";"]', "[data-pair='\"\"']", '[data-act="tab"]'].map(seen), nav };
+  });
+  check('{ } ( ) ; " " e Tab aparecem logo no começo da barra', reach.first.every(Boolean), JSON.stringify(reach.first));
+  check('← e → ficam sempre à vista, mesmo com a barra rolada', reach.nav.length === 2 && reach.nav.every(Boolean), JSON.stringify(reach.nav));
+
   // cabeçalho do celular numa linha só (sem teclado)
   await p.setViewportSize({ width: 390, height: 780 });
   await p.evaluate(() => document.activeElement && document.activeElement.blur());

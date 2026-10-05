@@ -125,40 +125,45 @@ window.__pocketSw = (function () {
       </div>
       <div class="actions" id="actions" role="toolbar" aria-label="Ações principais"></div>
       <div class="keys" id="keys" aria-label="Símbolos e setas">
-        <button data-act="tab" title="Indentar">Tab</button>
-        <button data-act="left" aria-label="Cursor para a esquerda">←</button>
-        <button data-act="right" aria-label="Cursor para a direita">→</button>
-        <button data-act="up" aria-label="Cursor para cima">↑</button>
-        <button data-act="down" aria-label="Cursor para baixo">↓</button>
-        <span class="sep" aria-hidden="true"></span>
-        <button data-pair="{}">{ }</button>
-        <button data-pair="()">( )</button>
-        <button data-pair="[]">[ ]</button>
-        <button data-pair='""'>" "</button>
-        <button data-ins=";">;</button>
-        <button data-ins=".">.</button>
-        <button data-ins=",">,</button>
-        <button data-ins="=">=</button>
-        <button data-ins="<">&lt;</button>
-        <button data-ins=">">&gt;</button>
-        <button data-ins="!">!</button>
-        <button data-ins="$">$</button>
-        <button data-ins="+">+</button>
-        <button data-ins="-">-</button>
-        <button data-ins="*">*</button>
-        <button data-ins="/">/</button>
-        <button data-ins="%">%</button>
-        <button data-ins="&&">&amp;&amp;</button>
-        <button data-ins="||">||</button>
-        <button data-ins="?">?</button>
-        <button data-ins=":">:</button>
-        <button data-ins="'">'</button>
-        <button data-ins="_">_</button>
-        <span class="sep" aria-hidden="true"></span>
-        <button data-snip="Console.WriteLine(|);">WriteLine</button>
-        <button data-snip="Console.ReadLine()|">ReadLine</button>
-        <button data-act="home" aria-label="Começo da linha">Início</button>
-        <button data-act="end" aria-label="Fim da linha">Fim</button>
+        <div class="keys-scroll">
+          <button data-pair="{}">{ }</button>
+          <button data-pair="()">( )</button>
+          <button data-ins=";">;</button>
+          <button data-pair='""'>" "</button>
+          <button data-act="tab" title="Indentar">Tab</button>
+          <span class="sep" aria-hidden="true"></span>
+          <button data-pair="[]">[ ]</button>
+          <button data-ins=".">.</button>
+          <button data-ins=",">,</button>
+          <button data-ins="=">=</button>
+          <button data-ins="<">&lt;</button>
+          <button data-ins=">">&gt;</button>
+          <button data-ins="!">!</button>
+          <button data-ins="$">$</button>
+          <button data-ins="+">+</button>
+          <button data-ins="-">-</button>
+          <button data-ins="*">*</button>
+          <button data-ins="/">/</button>
+          <button data-ins="%">%</button>
+          <button data-ins="&&">&amp;&amp;</button>
+          <button data-ins="||">||</button>
+          <button data-ins="?">?</button>
+          <button data-ins=":">:</button>
+          <button data-ins="'">'</button>
+          <button data-ins="_">_</button>
+          <span class="sep" aria-hidden="true"></span>
+          <button data-snip="Console.WriteLine(|);">WriteLine</button>
+          <button data-snip="Console.ReadLine()|">ReadLine</button>
+          <span class="sep" aria-hidden="true"></span>
+          <button data-act="up" aria-label="Cursor para cima">↑</button>
+          <button data-act="down" aria-label="Cursor para baixo">↓</button>
+          <button data-act="home" aria-label="Começo da linha">Início</button>
+          <button data-act="end" aria-label="Fim da linha">Fim</button>
+        </div>
+        <div class="keys-nav" role="group" aria-label="Mover o cursor">
+          <button data-act="left" aria-label="Cursor para a esquerda">←</button>
+          <button data-act="right" aria-label="Cursor para a direita">→</button>
+        </div>
       </div>
     </section>
 

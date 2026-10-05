@@ -51,11 +51,11 @@
 .hint-card pre { margin: 0; padding: 9px 10px; border-radius: 7px; background: var(--sunken); font: 400 13px/1.5 var(--mono); overflow-x: auto; }
 
 /* Barra de teclas */
-.keys {
-  flex: none; display: flex; gap: 5px; padding: 6px 8px; overflow-x: auto; border-top: 1px solid var(--line); background: var(--sunken);
-  scrollbar-width: none; -webkit-overflow-scrolling: touch;
-}
-.keys::-webkit-scrollbar { display: none; }
+.keys { flex: none; display: flex; align-items: center; gap: 5px; padding: 6px 8px; border-top: 1px solid var(--line); background: var(--sunken); }
+/* Os símbolos rolam de lado; as setas ← → ficam paradas na ponta direita, sempre à mão. */
+.keys-scroll { flex: 1 1 0; min-width: 0; display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.keys-scroll::-webkit-scrollbar { display: none; }
+.keys-nav { flex: none; display: flex; gap: 5px; padding-left: 6px; border-left: 1px solid var(--line); }
 .keys button {
   flex: none; min-width: 36px; height: 34px; padding: 0 9px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel);
   font: 500 13px/1 var(--mono);
@@ -155,7 +155,7 @@
 
 /* Telas de toque: alvos maiores */
 @media (pointer: coarse) {
-  .keys button { height: 42px; min-width: 42px; }
+  .keys button { height: 42px; min-width: 40px; }
   .keys { padding: 6px 8px 7px; }
   .ftab { height: 32px; }
   .mini { height: 36px; }
