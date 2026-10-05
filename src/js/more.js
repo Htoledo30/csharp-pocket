@@ -10,6 +10,7 @@ import { openFiles } from './projects-ui.js';
 import { openHistory, saveNamedVersion } from './history-ui.js';
 import { exportCurrent, pickFilesToImport } from './backup.js';
 import { changeFont } from './keybar.js';
+import { toggleZen } from './zen.js';
 
 async function paste() {
   try {
@@ -43,6 +44,7 @@ const GROUPS = [
     ['Copiar tudo', copyCode],
     ['Colar', paste],
     ['Cola de C#', openCola],
+    ['Código em tela cheia', toggleZen],
     ['Letra maior', () => changeFont(1)],
     ['Letra menor', () => changeFont(-1)],
   ]],

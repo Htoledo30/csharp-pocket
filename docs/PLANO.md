@@ -32,6 +32,7 @@ e roda o que for escrito.
 - [x] Vários arquivos por programa, com abas (uma classe por arquivo)
 - [x] Arquivos que persistem (`File.WriteAllText` guarda entre execuções)
 - [x] Exemplos que mostram tudo: forca, calculadora, batalha (4 arquivos), cobrinha em tempo real, recorde salvo
+- [x] Código em tela cheia (botão no canto do editor, na barra de ações e no menu Mais); sem zoom do Safari ao tocar no código
 - [x] Modo jogo: terminal em tela cheia com as teclas escolhidas nos Ajustes (setas, Enter, WASD, números...)
 
 ## Fase 4 — Não perder nada ✅

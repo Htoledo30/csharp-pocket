@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>C# Pocket</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="description" content="Editor e terminal de C# que roda inteiro no navegador, sem servidor e sem internet.">
 
 <!-- Aplicativo instalável: abre em tela cheia, sem a barra do navegador -->
@@ -87,6 +87,7 @@ window.__pocketSw = (function () {
           <button class="mini strong" id="replaceAll">Todos</button>
         </div>
       </div>
+      <div class="editor-wrap">
       <div class="scroller" id="scroller">
         <div class="gutter" id="gutter" aria-hidden="true"></div>
         <div class="sheet">
@@ -96,6 +97,11 @@ window.__pocketSw = (function () {
           <div class="ac" id="ac" role="listbox" aria-label="Sugestões" hidden></div>
           <div class="sig" id="sig" aria-live="polite" hidden></div>
         </div>
+      </div>
+      <div class="zen-tools" id="zenTools">
+        <button class="zen-btn" id="zenKb" type="button" aria-label="Fechar o teclado" title="Fechar o teclado"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/><path d="M4 20h16"/></svg></button>
+        <button class="zen-btn" id="zenBtn" type="button" aria-pressed="false" aria-label="Código em tela cheia" title="Código em tela cheia"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="zenIcon" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      </div>
       </div>
       <div class="problem" id="problem" role="status" hidden>
         <div class="problem-text"><b id="problemWhere"></b><span id="problemMsg"></span></div>

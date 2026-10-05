@@ -8,6 +8,7 @@ import { openFind } from './find.js';
 import { openCola } from './cola.js';
 import { duplicateLines, toggleComment, gotoLine } from './commands.js';
 import { openMore } from './more.js';
+import { toggleZen, inZen } from './zen.js';
 
 const S = (d) => '<svg viewBox="0 0 24 24" aria-hidden="true">' + d + '</svg>';
 const ICON = {
@@ -23,6 +24,7 @@ const ICON = {
   dup: S('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/><path d="M14 11v6M11 14h6"/>'),
   comment: S('<path d="M9 19L15 5"/>'),
   goto: S('<path d="M8 4L6 20M18 4l-2 16M4 9h17M3 15h17"/>'),
+  zen: S('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'),
   more: S('<circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.7" fill="currentColor" stroke="none"/>'),
 };
 
@@ -39,13 +41,14 @@ const ACTIONS = {
   dup: { label: 'Duplicar', icon: 'dup', run: () => duplicateLines(), hint: 'Duplicar a linha' },
   comment: { label: 'Comentar', icon: 'comment', run: () => toggleComment(), hint: 'Comentar ou descomentar a linha' },
   goto: { label: 'Ir p/ linha', icon: 'goto', run: () => gotoLine() },
+  zen: { label: 'Tela cheia', icon: 'zen', run: () => toggleZen(), id: 'zenAction', hint: 'Só o código, em tela cheia' },
   more: { label: 'Mais', icon: 'more', run: () => openMore(), id: 'more', hint: 'Todos os comandos' },
 };
 
 export const ACTION_IDS = Object.keys(ACTIONS).filter((id) => id !== 'run' && id !== 'more');
 export const actionLabel = (id) => ACTIONS[id].label;
 const DEFAULT_PHONE = ['format', 'undo', 'redo', 'keyboard'];
-const DEFAULT_WIDE = ['format', 'undo', 'redo', 'find', 'cola'];
+const DEFAULT_WIDE = ['format', 'undo', 'redo', 'find', 'cola', 'zen'];
 
 export function chosenActions() {
   const base = Array.isArray(settings.actions) ? settings.actions : (window.matchMedia('(max-width: 699px)').matches ? DEFAULT_PHONE : DEFAULT_WIDE);
@@ -72,6 +75,15 @@ export function drawActions() {
   bar.textContent = '';
   for (const id of chosenActions()) bar.append(button(id));
   paintRun();
+  paintZen();
+}
+
+function paintZen() {
+  const b = $('actions').querySelector('[data-action="zen"]');
+  if (!b) return;
+  const on = inZen();
+  b.querySelector('span').textContent = on ? 'Sair' : 'Tela cheia';
+  b.setAttribute('aria-pressed', String(on));
 }
 
 function paintRun() {
@@ -98,5 +110,6 @@ export function initActionBar() {
     if (b && ACTIONS[b.dataset.action]) ACTIONS[b.dataset.action].run();
   });
   bus.on('run:state', (state) => { running = state; paintRun(); });
+  bus.on('zen:mode', paintZen);
   drawActions();
 }

@@ -111,6 +111,27 @@ try {
   });
   const grown = await p.evaluate(() => parseFloat(getComputedStyle(document.getElementById('code')).fontSize));
   check(canTouch ? 'pinça aumenta a letra' : 'pinça (este navegador de teste não cria toques: pulado)', !canTouch || grown > before, before + ' -> ' + grown);
+  // sem zoom do Safari ao tocar no código
+  check('a página não dá zoom ao escrever (maximum-scale=1)', await p.evaluate(() => /maximum-scale=1/.test(document.querySelector('meta[name=viewport]').content)));
+
+  // código em tela cheia
+  await p.click('#code');
+  await p.waitForTimeout(300);
+  await p.click('#zenBtn');
+  await p.waitForTimeout(100);
+  check('tela cheia: cabeçalho e terminal somem, o código fica', await p.evaluate(() => getComputedStyle(document.querySelector('.head')).display === 'none' && getComputedStyle(document.getElementById('paneTerm')).display === 'none' && getComputedStyle(document.getElementById('paneCode')).display !== 'none'));
+  check('tela cheia: o teclado continua com foco', await p.evaluate(() => document.activeElement.id === 'code'));
+  check('tela cheia: barra de ações e de teclas à vista', await p.isVisible('#actions') && await p.isVisible('#keys'));
+  check('tela cheia: botão de fechar o teclado à vista', await p.isVisible('#zenKb'));
+  const top = await box(p, '#paneCode');
+  check('tela cheia: o código começa no topo da tela', top.y < 16, JSON.stringify(top));
+  await p.click('#zenBtn');
+  check('sair da tela cheia traz o cabeçalho de volta', await p.evaluate(() => !document.getElementById('app').classList.contains('zen') && getComputedStyle(document.querySelector('.head')).display !== 'none'));
+  await p.click('#zenBtn');
+  await setCode(p, 'Console.WriteLine("zen");\n');
+  await p.click('#keyRun');
+  await idle(p);
+  check('executar sai da tela cheia e mostra o terminal', await p.evaluate(() => !document.getElementById('app').classList.contains('zen')) && (await screen(p)).includes('zen'));
   check('celular: sem erros no console', p.errors.length === 0, p.errors.join(' | '));
   await phone.context.close();
 
@@ -120,6 +141,10 @@ try {
   const direction = await wide.page.evaluate(() => getComputedStyle(document.querySelector('#actions .act-btn')).flexDirection);
   check('tela larga: ícone e nome lado a lado', direction === 'row', direction);
   check('tela larga: barra de ações visível', await wide.page.isVisible('#actions'));
+  await wide.page.click('[data-action="zen"]');
+  check('tela larga: Tela cheia esconde o terminal e a barra vira "Sair"', await wide.page.evaluate(() => getComputedStyle(document.getElementById('paneTerm')).display === 'none' && document.querySelector('[data-action="zen"] span').textContent === 'Sair'));
+  await wide.page.click('[data-action="zen"]');
+  check('tela larga: sair mostra o terminal de novo', await wide.page.isVisible('#paneTerm'));
   check('tela larga: sem erros no console', wide.page.errors.length === 0, wide.page.errors.join(' | '));
   await wide.context.close();
 } finally {

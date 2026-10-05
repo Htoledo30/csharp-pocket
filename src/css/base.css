@@ -75,6 +75,7 @@
 @supports (-webkit-touch-callout: none) {
   /* O iOS aproxima a página quando um campo com letra menor que 16px recebe o foco. */
   :root { --code-size: 16px; --lh: 24px; }
+  html:root input, html:root select { font-size: max(16px, var(--code-size)); }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
